@@ -1,0 +1,279 @@
+---
+title: "Homeostasis"
+output:
+  pdf_document: default
+  html_document: default
+date: '2022-11-26'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Loading data
+
+```{r}
+library(tidyverse)
+
+#Get FaceStroopData
+datadir<-"/work/285178/BodyFeelingExp_data"
+
+
+#Find files
+files<-list.files(datadir,pattern='^BodyFeelingExp_.+?csv',full.names=TRUE)
+
+#Prepare an empty data frame for the data (also removes old version)
+dataBFE<-data.frame()
+
+#How many datasets were there
+n_datasets_raw<-length(files)
+#Prepare a variable to monitor how many datasets we keep
+n_datasets<-0
+#Prepare a variable to monitor how many points we originally had
+n_datapoints_raw<-0
+
+#Loop to go through all files in the list
+for(iii in 1:n_datasets_raw){
+  
+  #remove old loaded file to not risk importing it multiple times
+  if(exists('data_temp')) rm(data_temp)
+  
+  #Load data
+  data_temp<-read.csv(files[iii])
+  if(dim(data_temp)[2]==31){
+    data_temp[1,6]<-data_temp[dim(data_temp)[1],6]
+    data_temp<-data_temp[1,c(6,8:27)]
+        if(length(colnames(dataBFE))==0){
+          dataBFE=data_temp
+          rm(data_temp)
+          #counter to monitor included datasets
+          n_datasets<-n_datasets+1
+        }
+        #Bind loaded data with actual data
+        else {dataBFE<-rbind(dataBFE,data_temp)
+          rm(data_temp)
+          #counter to monitor included datasets
+          n_datasets<-n_datasets+1
+        }
+    }
+}
+
+#A variable to monitor how many points we keep
+n_datapoints<-length(dataBFE[,1])
+
+
+#Make a variable which has hour and minutes of the day as decimal variable
+dataBFE$hour2<-dataBFE$hour+(dataBFE$minute)/60
+
+
+cf=1/24
+
+dataBFE$sinCirc<-sin(2*pi*cf*dataBFE$hour2)
+dataBFE$cosCirc<-cos(2*pi*cf*dataBFE$hour2)
+
+
+ids = dataBFE %>% group_by(id) %>% summarize(n = n()) %>% filter(n>10)
+dataBFE1 = dataBFE %>% filter(id %in% ids$id)
+
+```
+
+# Linear analysis:
+
+```{r}
+library(lmerTest)
+# Freshness: Simple oscillation model
+modelBFEfreshCirc<-lmer(fresh~sinCirc+cosCirc+(1|id),data=dataBFE1)
+m_temp<-summary(modelBFEfreshCirc)
+m_temp
+
+
+dataBFE$freshCircFit<-m_temp$coefficients[1,1]+m_temp$coefficients[2,1]*dataBFE$sinCirc+m_temp$coefficients[3,1]*dataBFE$cosCirc
+
+plot(x=dataBFE$hour2,y=dataBFE$freshCircFit,type='p',col='darkgreen')
+
+ggplot(dataBFE,aes(x=hour2,y=fresh))+geom_smooth()+geom_line(aes(x=hour2,y=freshCircFit),col='darkgreen')+labs(x='Time of day (hours)', y='Tired/Fresh')
+
+A = sqrt((m_temp$coefficients[2,1])^2+(m_temp$coefficients[3,1])^2)
+phi = atan(m_temp$coefficients[3,1]/m_temp$coefficients[2,1])
+
+A
+phi
+
+#calculating the se for the amplitude
+
+b1 = m_temp$coefficients[2,1]
+db1 = m_temp$coefficients[2,2]
+b2 = m_temp$coefficients[3,1]
+db2 = m_temp$coefficients[3,2]
+
+db11 = m_temp$coefficients[2,2]*sqrt(323)
+db22 = m_temp$coefficients[3,2]*sqrt(323)
+
+
+#other way
+deriv1 = b1/(sqrt(b1^2+b2^2))
+deriv2 = b2/(sqrt(b1^2+b2^2))
+
+
+sd = sqrt(((deriv1*db11)^2)+((deriv2*db22)^2)+2*deriv1*deriv2*modelBFEfreshCirc@vcov_beta[2,3])
+
+se = sd/sqrt(323)
+
+```
+
+
+#Non linear analyses:
+##freshness
+
+```{r}
+nform_lin_sin <- ~ (A*sin(1/24*hour2+phi)+k)
+nfun_lin_sin <- deriv(nform_lin_sin,namevec=c("A","phi","k"),
+              function.arg=c("hour2","A","phi","k"))
+
+
+
+trig_lin_sin <- nlme::nlme(fresh ~ nfun_lin_sin(2*pi*hour2,A,phi,k), 
+                  data = dataBFE1,
+                  fixed= A+phi+k ~ 1, 
+                  random = k ~ 1, 
+                  groups = ~ id, 
+                  start = c(A = 30, phi = pi, k = 50),
+                  control = nlme::nlmeControl(lower=c(A = 0,phi = 0, k = 0), upper=c(A = -1,phi = 2*pi,k = 100)))
+
+non_lin_model = summary(trig_lin_sin)
+
+non_lin_model
+
+
+
+
+y_fresh = predict(trig_lin_sin)
+```
+
+##Mood
+
+```{r}
+nform_lin_sin <- ~ (A*sin(1/24*hour2+phi)+k)
+nfun_lin_sin <- deriv(nform_lin_sin,namevec=c("A","phi","k"),
+              function.arg=c("hour2","A","phi","k"))
+
+
+
+trig_lin_sin_mood <- nlme::nlme(mood ~ nfun_lin_sin(2*pi*hour2,A,phi,k), 
+                  data = dataBFE1,
+                  fixed= A+phi+k ~ 1, 
+                  random = k ~ 1, 
+                  groups = ~ id, 
+                  start = c(A = 30, phi = pi, k = 50),
+                  control = nlme::nlmeControl(lower=c(A = 0,phi = 0, k = 0), upper=c(A = -1,phi = 2*pi,k = 100)))
+
+non_lin_model_mood = summary(trig_lin_sin_mood)
+
+non_lin_model_mood
+
+y_mood = predict(non_lin_model_mood)
+```
+
+##Hunger
+
+```{r}
+#Hunger
+nform_lin_sin <- ~ (A*sin(1/24*hour2+phi)+k)
+nfun_lin_sin <- deriv(nform_lin_sin,namevec=c("A","phi","k"),
+              function.arg=c("hour2","A","phi","k"))
+
+
+
+trig_lin_sin_hun <- nlme::nlme(hunger ~ nfun_lin_sin(2*pi*hour2,A,phi,k), 
+                  data = dataBFE1,
+                  fixed= A+phi+k ~ 1, 
+                  random = k ~ 1, 
+                  groups = ~ id, 
+                  start = c(A = 30, phi = pi, k = 50),
+                  control = nlme::nlmeControl(lower=c(A = 0,phi = 0, k = 0), upper=c(A = -1,phi = 2*pi,k = 100)))
+non_lin_model_hun = summary(trig_lin_sin_hun)
+
+non_lin_model_hun
+
+y_hun = predict(non_lin_model_hun)
+
+pred_data = data.frame(y_fresh, y_mood, y_hun)
+
+pred_data = pred_data %>% rename(fresh = y_fresh, hunger = y_hun, mood = y_mood)
+
+pred_data = pred_data %>% pivot_longer(cols = c("fresh", "mood", "hunger"), names_to = "Question",values_to = "prediction")
+```
+
+#Visualization
+
+```{r}
+
+dataBFE2 = dataBFE1 %>% pivot_longer(cols = c("mood","fresh","hunger"), names_to = "Question", values_to = "Score")
+
+pred_data$hour2 = dataBFE2$hour2
+pred_data$id = dataBFE2$id
+
+pred_data %>% ggplot(aes(x = hour2, y = prediction, col = Question))+facet_wrap(~id, nrow = 3)+theme_bw()+geom_point(data = dataBFE2, aes(x= hour2, y = Score))+geom_line()+ylab("Score")+xlab("Time after midnight")+theme(text = element_text(size=20))+scale_x_continuous(breaks = seq(0,24,length.out = 5))
+```
+#single results visualization
+
+```{r}
+dataBFE1 %>% ggplot(aes(x = hour2, y = y_fresh))+geom_line()+facet_wrap(~id, nrow = 3)+theme_bw()+geom_point(aes(x = hour2, y = fresh))+ylab("Freshness score")+xlab("Time after midnight")
+```
+
+```{r}
+
+dataBFE1 %>% ggplot(aes(x = hour2, y = y_mood))+geom_line()+facet_wrap(~id, nrow = 3)+theme_bw()+geom_point(aes(x = hour2, y = mood))+ylab("mood score")+xlab("Time after midnight")
+
+```
+
+
+
+```{r}
+dataBFE1 %>% ggplot(aes(x = hour2, y = y_hun))+geom_line()+facet_wrap(~id, nrow = 3)+theme_bw()+geom_point(aes(x = hour2, y = hunger))+ylab("hunger score")+xlab("Time after midnight")
+
+```
+
+
+
+
+
+## lets simulate!!!!!!!! errors on amplitude!
+
+
+```{r}
+
+times = 20
+Asim = rnorm(times,50,4)
+asimse = 4/sqrt(times)
+x = seq(1,10,length.out = times)
+phi = rnorm(times,0.5,0.0001)
+k = rnorm(times,10,0.0001)
+
+y = Asim*sin(x+phi)+k
+
+
+plot(x,y)
+
+sinx<-sin(x)
+cosx<-cos(x)
+
+m1 = lm(y~sinx+cosx)
+m11 = summary(m1)
+m11
+
+A = sqrt((m11$coefficients[2,1])^2+( m11$coefficients[3,1])^2)
+
+b1 = m11$coefficients[2,1]
+db1 = m11$coefficients[2,2]
+b2 = m11$coefficients[3,1]
+db2 = m11$coefficients[3,2]
+
+
+
+deriv1 = b1/(sqrt(b1^2+b2^2))
+deriv2 = b2/(sqrt(b1^2+b2^2))
+seA = sqrt(((deriv1*db1)^2)+((deriv2*db2)^2)+(2*deriv1*deriv2*vcov(m1)[2,3]))
+
+sdA = seA*sqrt(times)
+```
