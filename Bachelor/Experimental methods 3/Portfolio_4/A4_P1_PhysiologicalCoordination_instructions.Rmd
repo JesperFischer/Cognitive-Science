@@ -1,0 +1,1157 @@
+---
+title: "Assignment 4 - Heart rate, respiration and interpersonal coordination"
+author: "Daniel, Jesper, Pernille KJ and Astrid"
+date: "August 20, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 4 - Heart rate, respiration and interpersonal coordination
+
+Physiological data (here heart rate [variability], and respiration) are increasingly popular. Historically treated as pernicious noise to be regressed out of neuro-imaging data, there is now increasing research on how these signals tell us something important about cognition and beyond being just a signal of cognitive processes also impact them in interesting ways. Advanced sport science, and the quantified self movement (closely followed by marketing and communication) have hailed continuous physiological tracking as a powerful way to access and modify attitudes, habits, and performance. Further, as team coordination (in the military, in decision processes and organizational contexts) is more and more in focus, research has attempted to measure how interpersonal coordination between physiological systems might tell us something important about e.g. emotional and cognitive coordination. See references in the reading list for more on this.
+
+In this assignment, you will learn to:
+- pre-process physiological data (and grow further your mad R skills)
+- model the continuous interdependence between two signals (using a multilevel model as proxy for a dynamical system approach)
+- conservatively assess the presence of coordination between to signals in a controlled context
+
+This assignment has two parts. The first part familiarizes you with heart rate, and respiration data and their preprocessing. The second part explores how to analyze interpersonal coordination of these signals.
+
+These are the questions you need to be able to answer at the end of the assignment (aka that you need to submit as part of the portfolio)
+
+1) How do you preprocess heart rate and respiration data? Describe the process. If any data needs to be excluded, list the excluded data and motivate the exclusion.
+
+2) Do you observe interpersonal coordination in heart rate and respiration? Describe your control baseline, the method used to quantify coordination, and the statistical models used to infer whether coordination was higher than in the baseline. Report the results of the models.
+
+3) Do you observe differences in coordination between conditions? Report the models and results.
+
+4) Is respiration coordination a likely driver of heart rate coordination? Describe how you would test for it. Bonus points if you actually run the tests and report methods and results.
+
+N.B. N.B. The data are collected by students from previous years (Study 1 - 4). Note that synchronous and turn-taking are the same across all four studies, but the third condition is different: in the first year it was self-paced joint reading; in the second to fourth years it was the tv-series conversation.
+
+## Let's get started
+
+### Exploring physiological signals
+The data files can be found here: https://www.dropbox.com/sh/bvvk7t3fvsplh9o/AADM6q4WrtXKvSwH5aAO1umta?dl=0
+
+- Choose one pair (one pair, three conditions, three files)
+- Load the logs
+- Produce a plot of the participants' respiration signal and a different one of the participants' HR signal.
+  N.B: remember the slides: artifacts, downsampling, scaling.
+  N.B. The gridExtra::grid.arrange() function allows you to display the plots side by side. E.g. grid.arrange(plot1, plot2, plot3, ncol=3). There are also smarter packages, like cowplot and ggpubr.
+- Can you eye-ball which condition if any displays more physiological coordination?
+
+### First we read one data file and identify the procedure
+- Load the file
+- correctly identify all columns
+- plot the data
+- deal with the artifacts
+- downsample the data
+- Add a column for study, group, trial and condition
+
+```{r}
+# Load the libraries
+pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret,merTools, tidyverse, groupdata2, RHRV, gridExtra, tseriesChaos, reshape2, crqa, sjPlot)
+memory.size(30000)
+#loading the data
+files = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/Portfolio_4/data1",
+"*.csv", full.names = TRUE)
+
+#reading one file to check the process.
+s = read.csv(files[1])
+
+#downsampling
+s1 = s %>% group(n=100, method = "greedy") %>% 
+  summarise(time = mean(time, na.rm = T),
+            HR1 = mean(HR1, na.rm = T),
+            HR2 = mean(HR2, na.rm = T),
+            Resp1 = mean(Resp1, na.rm = T),
+            Resp2 = mean(Resp2, na.rm = T )           
+            )
+
+
+
+# Plot
+ggplot(s1) + geom_path(aes(time, HR1, color = "P1"))+geom_path(aes(time, HR2, color = "P2"))
+
+
+
+
+## Remove outliers values over 2.5 or 3 sd over the mean gets to be the mean or 2.5-3 sd above or below the mean, whether the value is over or under the mean
+
+### Tip, check the function below. This is the function explained in the video lecture
+removeOuts2 <- function(ts,threshold){
+    ts[ts > (mean(ts,na.rm=T) +
+             (threshold*sd(ts,na.rm=T)))] = (mean(ts,na.rm=T) +
+             (threshold*sd(ts,na.rm=T)))
+    
+    
+    ts[ts < (mean(ts,na.rm=T) -
+             (threshold*sd(ts,na.rm=T)))] = mean(ts,na.rm=T)-
+             (threshold*sd(ts,na.rm=T))
+  return(ts)
+
+}
+
+removeOuts <- function(ts,threshold){
+  ts[ts > (mean(ts,na.rm=T) +
+             (threshold*sd(ts,na.rm=T))) | 
+       ts < (mean(ts,na.rm=T) -
+             (threshold*sd(ts,na.rm=T)))] = mean(ts,na.rm=T)
+  return(ts)
+}
+threshold=2.5
+# Default value at 2.5 sds from the mean. But you can increase it, if you want.
+s2 = s1 %>% mutate(
+  HR2 = removeOuts(HR2, threshold),
+  HR1 = removeOuts(HR1, threshold),
+  Resp1 = removeOuts(Resp1, threshold),
+  Resp2 = removeOuts(Resp2, threshold),
+  )
+s3 = s1 %>% mutate(
+  HR2 = removeOuts2(HR2, threshold),
+  HR1 = removeOuts2(HR1, threshold),
+  Resp1 = removeOuts2(Resp1, threshold),
+  Resp2 = removeOuts2(Resp2, threshold),
+  )
+
+
+
+# Plot raw data against those with the artifacts removed
+r = ggplot(s1) + geom_path(aes(time, HR1, color = "P1"))+geom_path(aes(time, HR2, color = "P2"))+ggtitle("(a) no correction")
+r1 = ggplot(s2) + geom_path(aes(time, HR1, color = "P1"))+geom_path(aes(time, HR2, color = "P2"))+ggtitle("(b) outliers to mean")
+r2 = ggplot(s3) + geom_path(aes(time, HR1, color = "P1"))+geom_path(aes(time, HR2, color = "P2"))+ggtitle("(c) outliers to 2.5sd above or below mean")
+
+grid.arrange(r,r1,r2)
+
+
+## Scale
+### Tip: if scale() gives some issues, try the one below
+#z_scale <- function(column){
+#  column_c <- (column - mean(column)) / sd(column)
+#}
+s4 = s2 %>% mutate(
+  HR2 = scale(HR2),
+  HR1 = scale(HR1),
+  Resp1 = scale(Resp1),
+  Resp2 = scale(Resp2),
+  )
+#plotting the scaled data.
+r = ggplot(s4) + geom_path(aes(time, HR1, color = "P1"))+geom_path(aes(time, HR2, color = "P2"))+ggtitle("(b) scaled data")
+
+r1 = ggplot(s2) + geom_path(aes(time, HR1, color = "P1"))+geom_path(aes(time, HR2, color = "P2"))+ggtitle("(a) non-scaled data")
+
+grid.arrange(r1, r)
+
+
+
+## Now add the group, trial, condition to the cleaned up, scaled, downsampled data
+
+vars = str_match(files[1],"Study(\\S+)_G(\\S+)_T(\\d+)_(.*)")
+
+vars = as.data.frame(t(vars[2:length(vars)]))
+names(vars) = c("study","Group","Trail", "col")
+
+
+p = cbind(s1, vars)
+```
+
+
+## Now we are ready to go to load and pre-process all files
+
+Go through all the files (with a function passed onto map_df), check which files should be excluded, if any, and save the pre-processed time-series. This procedure is similar to what you have done in portfolio 3. You may use the code you wrote for that assignment and adjust it to this one.
+
+A couple of tips:
+- looping will be too slow for these files (remember you have ~200 000 rows in each file!). Making a function and using Map/Map_df is your salvation.
+- you may want your first step after loading a file to be downsampling, so that you don't work with enormous amount of data
+- each study restarts the group numbering, so you should make sure to change that (e.g. 100 * Study + Group)
+- you need to make sure all the data are meaningful or something has to be removed. Plotting is your friend. E.g. "Study1_G1_T1_Synchronous" has one bad respiration signal. We could replace it with NAs
+
+
+```{r}
+# Define a function running the loading, artifact removal, scaling, downsampling, info adding.
+
+#empty data-frame
+qd = p[FALSE,]
+#looping through all the 97 files.
+for (i in 1:97){
+vars = str_match(files[i],"Study(\\S+)_G(\\S+)_T(\\d+)_(.*)")
+
+vars = as.data.frame(t(vars[2:length(vars)]))
+names(vars) = c("study","Group","Trail", "col")
+
+    if (vars$study != "4")
+{
+    
+filename1 = read_csv(files[i])
+filename1 = filename1 %>% group(n=100, method = "greedy") %>% 
+  summarise(time = mean(time, na.rm = T),
+            HR1 = mean(HR1, na.rm = T),
+            HR2 = mean(HR2, na.rm = T),
+            Resp1 = mean(Resp1, na.rm = T),
+            Resp2 = mean(Resp2, na.rm = T )           
+            )
+
+#filename1 = filename1 %>% mutate(
+#  HR2 = removeOuts(HR2, threshold),
+#  HR1 = removeOuts(HR1, threshold),
+#  Resp1 = removeOuts(Resp1, threshold),
+#  Resp2 = removeOuts(Resp2, threshold),
+#  )
+
+filename1 = filename1 %>% mutate(
+  HR2 = scale(HR2),
+  HR1 = scale(HR1),
+  Resp1 = scale(Resp1),
+  Resp2 = scale(Resp2),
+  )
+
+
+## Now add the group, trial, condition to the cleaned up, scaled, downsampled data
+
+vars = str_match(files[i],"Study(\\S+)_G(\\S+)_T(\\d+)_(.*)")
+
+vars = as.data.frame(t(vars[2:length(vars)]))
+names(vars) = c("study","Group","Trail", "col")
+
+p = cbind(filename1, vars)
+qd = bind_rows(p, qd)
+print(i)
+ 
+}
+else{
+  filename1 = read_csv(files[i])
+filename1 = filename1 %>% group(n=100, method = "greedy") %>% 
+  summarise(min = mean(min, na.rm = T),
+            HR1 = mean(HR1, na.rm = T),
+            HR2 = mean(HR2, na.rm = T),
+            Resp1 = mean(Resp1, na.rm = T),
+            Resp2 = mean(Resp2, na.rm = T )           
+            )
+
+filename1$time = filename1$min*60000
+
+#filename1 = filename1 %>% mutate(
+#  HR2 = removeOuts(HR2, threshold),
+#  HR1 = removeOuts(HR1, threshold),
+#  Resp1 = removeOuts(Resp1, threshold),
+#  Resp2 = removeOuts(Resp2, threshold),
+#  )
+
+filename1 = filename1 %>% mutate(
+  HR2 = scale(HR2),
+  HR1 = scale(HR1),
+  Resp1 = scale(Resp1),
+  Resp2 = scale(Resp2),
+  )
+
+## Now add the group, trial, condition to the cleaned up, scaled, downsampled data
+
+vars = str_match(files[i],"Study(\\S+)_G(\\S+)_T(\\d+)_(.*)")
+
+vars = as.data.frame(t(vars[2:length(vars)]))
+names(vars) = c("study","Group","Trail", "col")
+
+p = cbind(filename1, vars)
+qd = bind_rows(p, qd)
+print(i)
+}}
+```
+
+## Now we need to run some analysis
+
+Let's start with a multilevel model that accounts for 
+- stability (how each signal is autocorrelated)
+- interpersonal dependence (each signal is dependent from the previous state of the other signal)
+
+The data needs to be further prepared, so we can analyze both participants in the same model.
+We need to turn the data into a long format:
+- a column indicating own hr and one own respiration
+- a column indicating other hr and one other respiration
+- a column indicating change in hr from previous round and one in respiration
+
+We can then run an analysis where change is a function of one's previous state (stability, see slides), and the other's previous state (coupling). Make sure to:
+- set up the most interesting contrasts: how do these parameters vary by condition? which condition should be baseline?
+- set up the right random effects.
+- N.B. the model will be slow. Make sure it works on a subset of the data first!
+
+
+Bonus question: what if we include an additional layer? Is my heart rate just adjusting to yours, or also to how much you are adjusting to mine?
+- to start answering this we can add a column indicating the previous change in hr in the other and one in respiration
+- we can then build on the previous models by also adding the previous change in the other
+
+```{r}
+#adding participant
+qd$partici = as.numeric(qd$study)*100+as.numeric(qd$Group)
+
+#removing outliers.
+qd = qd %>% mutate(
+  HR2 = removeOuts(HR2, threshold),
+  HR1 = removeOuts(HR1, threshold),
+  Resp1 = removeOuts(Resp1, threshold),
+  Resp2 = removeOuts(Resp2, threshold),
+  )
+
+
+#making dataframes with study 1-2 and 3-4
+plot = qd %>% filter(study == 1 | study == 2)
+plot1 = qd %>% filter(study == 3 | study == 4)
+
+
+
+#plotting first:
+ggplot(plot) + geom_path(aes(time, HR1, color = col))+facet_wrap(~partici)+ggtitle("HR1")
+ggplot(plot1) + geom_path(aes(time, HR1, color = col))+facet_wrap(~partici)+ggtitle("HR1")
+
+ggplot(plot) + geom_path(aes(time, HR2, color = col))+facet_wrap(~partici)+ggtitle("HR2")
+ggplot(plot1) + geom_path(aes(time, HR2, color = col))+facet_wrap(~partici)+ggtitle("HR2")
+
+ggplot(plot) + geom_path(aes(time, Resp1, color = col))+facet_wrap(~partici)+ggtitle("Resp1")
+ggplot(plot1) + geom_path(aes(time, Resp1, color = col))+facet_wrap(~partici)+ggtitle("Resp1")
+
+
+ggplot(plot) + geom_path(aes(time, Resp2, color = col))+facet_wrap(~partici)+ggtitle("Resp2")
+ggplot(plot1) + geom_path(aes(time, Resp2, color = col))+facet_wrap(~partici)+ggtitle("Resp2")
+```
+
+
+
+```{r}
+# Generate a column for each: previous HR1, HR2, Resp1, Resp2. Tip: use the function Lag()
+
+#removing NA's
+qd = qd[!is.na(qd$HR1), ]
+qd = qd[!is.na(qd$HR2), ]
+qd = qd[!is.na(qd$Resp1), ]
+qd = qd[!is.na(qd$Resp2), ]
+
+q = qd
+
+#lag column
+q = q %>%group_by(partici, Trail) %>%  mutate(
+HR1lag = lag(HR1),
+HR2lag = lag(HR2),
+Resp1lag = lag(Resp1),
+Resp2lag = lag(Resp2)
+)
+
+# Generate a column for each: change in HR1, HR2, Resp1, Resp2
+q = q %>% mutate(
+  HR1change = HR1-HR1lag,
+  HR2change = HR2-HR2lag,
+  Resp1change = Resp1-Resp1lag,
+  Resp2change = Resp2-Resp2lag
+)
+
+
+# Make the data long, so we can analyze both participants at the same time. Tip: you can use the function gather () 
+
+q1 = q %>% pivot_longer(c(HR1, HR2, Resp1, Resp2), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self = HR, Resp_self = Resp)
+  
+q2 = q %>% pivot_longer(c(HR2, HR1, Resp2, Resp1), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique")%>% rename(HR_other = HR, Resp_other = Resp)
+
+q3 = q %>% pivot_longer(c(HR1lag, HR2lag, Resp1lag, Resp2lag), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self_lag = HR, Resp_self_lag = Resp)
+
+q4 = q %>% pivot_longer(c(HR2lag, HR1lag, Resp2lag, Resp1lag), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_other_lag = HR, Resp_other_lag = Resp)
+
+q5 = q %>% pivot_longer(c(HR1change, HR2change, Resp1change, Resp2change), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self_change = HR, Resp_self_change = Resp)
+
+q6 = q %>% pivot_longer(c(HR2change, HR1change, Resp2change, Resp1change), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_other_change = HR, Resp_other_change = Resp)
+
+kk = q1 %>% ungroup() %>% dplyr::select("HR_self", "Resp_self")
+kk1 = q2 %>% ungroup() %>% dplyr::select("HR_other", "Resp_other")
+kk2 = q3 %>% ungroup() %>% dplyr::select("HR_self_lag", "Resp_self_lag")
+kk3 = q4 %>% ungroup() %>% dplyr::select("HR_other_lag", "Resp_other_lag")
+kk4 = q5 %>% ungroup() %>% dplyr::select("HR_self_change", "Resp_self_change")
+kk5 = q6 %>% ungroup() %>% dplyr::select("HR_other_change", "Resp_other_change")
+
+k = bind_cols(kk,kk1,kk2,kk3,kk4,kk5)
+
+
+k$partici = q1$partici
+k$col = q2$col
+k$study = q1$study
+k = k %>% mutate(partici = as.factor(k$partici), col = as.factor(k$col))
+
+k$HR_self_lag = -k$HR_self_lag
+k$dif = k$HR_other_lag-k$HR_self_lag
+
+
+k$col <- factor(k$col, levels = c("Conversation.csv", "MovementCoop.csv", "MovementGuided.csv", "SelfPaced.csv", "Synchronous.csv", "TurnTaking.csv"))
+
+m1 = lmer(HR_self_change~HR_self_lag+dif+(1|partici), data = k, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+summary(m1)
+
+m2 = lmer(HR_self_change~(HR_self_lag+dif):col+(1|partici), data = k, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+
+m3 = lmer(HR_self_change~(HR_self_lag+dif)*col+(1|partici), data = k, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+
+summary(m2)
+summary(m3)
+p1 = plot_model(m2, type = "int")
+p1
+
+
+# Bonus points: Add to the previous model also change in the other to see whether my adaptation is influenced by the other's adaptation.
+
+m5 = lmer(HR_self_change~0+(HR_self_lag+HR_other_lag+HR_other_change):col+(1|partici), data = k, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+summary(m5)
+```
+## Now we need to create control baselines.
+
+First shuffled controls, then surrogate pairs.
+
+### Creating controls: shuffled controls
+
+Shuffled controls break the temporal dependencies of time-series by shuffling the value within one time-series. This ensures the "coordination" observed is not due to the actual values in the series and not their sequence.
+Tip: sample() is your friend, but make sure to shuffle things within participant/condition and not throughout the whole dataset
+```{r}
+#visualisation of how shuffled controls look.
+fil = read_csv(files[1])
+
+fil = fil %>% group(n=100, method = "greedy") %>% 
+  summarise(time = mean(time, na.rm = T),
+            HR1 = mean(HR1, na.rm = T),
+            HR2 = mean(HR2, na.rm = T),
+            Resp1 = mean(Resp1, na.rm = T),
+            Resp2 = mean(Resp2, na.rm = T )           
+            )
+threshhold = 2.5
+fil = fil %>% mutate(
+  HR2 = removeOuts(HR2, threshold),
+  HR1 = removeOuts(HR1, threshold),
+  Resp1 = removeOuts(Resp1, threshold),
+  Resp2 = removeOuts(Resp2, threshold),
+  )
+
+
+fil1 = fil %>% 
+  mutate(HR1 = sample(HR1)) %>% 
+  mutate(HR2 = sample(HR2))
+
+
+ggplot(fil) + geom_path(aes(time, HR1, color = "P1"))+geom_path(aes(time, HR2, color = "P2"))+ggtitle("Original data")+ylab("Heart rate")
+ggplot(fil1) + geom_path(aes(time, HR1, color = "P1"))+geom_path(aes(time, HR2, color = "P2"))+ggtitle("shuffled data")+ylab("Heart rate")
+
+
+
+```
+
+```{r}
+#shuffle data
+shuffle = qd %>% group_by(partici, col) %>% 
+  mutate(HR1 = sample(HR1)) %>% 
+  mutate(HR2 = sample(HR2))
+
+
+shuffle$partici = as.numeric(shuffle$study)*100+as.numeric(shuffle$Group)
+
+
+#lag column
+shuffle = shuffle %>%group_by(partici, Trail) %>%  mutate(
+HR1lag = lag(HR1),
+HR2lag = lag(HR2),
+Resp1lag = lag(Resp1),
+Resp2lag = lag(Resp2)
+)
+
+# Generate a column for each: change in HR1, HR2, Resp1, Resp2
+shuffle = shuffle %>% mutate(
+  HR1change = HR1-HR1lag,
+  HR2change = HR2-HR2lag,
+  Resp1change = Resp1-Resp1lag,
+  Resp2change = Resp2-Resp2lag
+)
+
+
+# Make the data long, so we can analyze both participants at the same time. Tip: you can use the function gather () 
+
+q1 = shuffle %>% pivot_longer(c(HR1, HR2, Resp1, Resp2), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self = HR, Resp_self = Resp)
+  
+q2 = shuffle %>% pivot_longer(c(HR2, HR1, Resp2, Resp1), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique")%>% rename(HR_other = HR, Resp_other = Resp)
+
+q3 = shuffle %>% pivot_longer(c(HR1lag, HR2lag, Resp1lag, Resp2lag), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self_lag = HR, Resp_self_lag = Resp)
+
+q4 = shuffle %>% pivot_longer(c(HR2lag, HR1lag, Resp2lag, Resp1lag), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_other_lag = HR, Resp_other_lag = Resp)
+
+q5 = shuffle %>% pivot_longer(c(HR1change, HR2change, Resp1change, Resp2change), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self_change = HR, Resp_self_change = Resp)
+
+q6 = shuffle %>% pivot_longer(c(HR2change, HR1change, Resp2change, Resp1change), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_other_change = HR, Resp_other_change = Resp)
+
+kk = q1 %>% ungroup() %>% dplyr::select("HR_self", "Resp_self")
+kk1 = q2 %>% ungroup() %>% dplyr::select("HR_other", "Resp_other")
+kk2 = q3 %>% ungroup() %>% dplyr::select("HR_self_lag", "Resp_self_lag")
+kk3 = q4 %>% ungroup() %>% dplyr::select("HR_other_lag", "Resp_other_lag")
+kk4 = q5 %>% ungroup() %>% dplyr::select("HR_self_change", "Resp_self_change")
+kk5 = q6 %>% ungroup() %>% dplyr::select("HR_other_change", "Resp_other_change")
+
+shuffle3 = bind_cols(kk,kk1,kk2,kk3,kk4,kk5)
+
+#fixing the data frame
+shuffle3$partici = q1$partici
+shuffle3$partici = as.factor(shuffle3$partici)
+shuffle3$col = q2$col
+shuffle3$study = q1$study
+shuffle3$col = as.factor(shuffle3$col)
+shuffle3$HR_self_lag = -shuffle3$HR_self_lag
+shuffle3$dif = shuffle3$HR_other_lag-shuffle3$HR_self_lag
+shuffle3$Type<- "Shuffled"
+#matching data frames.
+k$Type = "Original"
+
+shuff = rbind(shuffle3, k)
+shuff$Type = as.factor(shuff$Type)
+shuff$Type = relevel(shuff$Type, ref = "Shuffled")
+
+shuff$col <- factor(shuff$col, levels = c("Conversation.csv", "MovementCoop.csv", "MovementGuided.csv", "SelfPaced.csv", "Synchronous.csv", "TurnTaking.csv"))
+
+
+m22 = lmer(HR_self_change~((HR_self_lag+dif):col)*Type+(1|partici), data = shuff, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+summary(m22)
+m33 = lmer(HR_self_change~((HR_self_lag+dif):col):Type+(1|partici), data = shuff, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+summary(m33)
+p121 = plot_model(m33, type = "int", axis.title = "Change in heart rate", title = "Plot 3; Shuffled controls vs the original data interaction estimates", legend.title = "Condition")
+p121
+
+```
+
+### TRICKY! Creating controls: surrogate pair controls
+ - Per each real pair, identify at least one surrogate pair (matching one of the participants, with somebody doing the same task, but in a different pair)
+ 
+```{r}
+#functon to make surrogate pairs if you only pair one participant with another, that is participant 1 from group 1 with participant 2 from group two and so on. so making two new pairs from the two groups.
+#data = function(fil, x){
+for (i in x){
+   
+popp = read.csv(fil[i])
+popp1 = read.csv(fil[i+1])
+
+
+popp = popp %>% group(n=100, method = "greedy") %>% 
+  summarise(time = mean(time, na.rm = T),
+            HR1 = mean(HR1, na.rm = T),
+            HR2 = mean(HR2, na.rm = T),
+            Resp1 = mean(Resp1, na.rm = T),
+            Resp2 = mean(Resp2, na.rm = T )           
+            )
+
+popp1 = popp1 %>% group(n=100, method = "greedy") %>% 
+  summarise(time = mean(time, na.rm = T),
+            HR1 = mean(HR1, na.rm = T),
+            HR2 = mean(HR2, na.rm = T),
+            Resp1 = mean(Resp1, na.rm = T),
+            Resp2 = mean(Resp2, na.rm = T )           
+            )
+
+popp = popp %>% mutate(
+  HR2 = scale(HR2),
+  HR1 = scale(HR1),
+  Resp1 = scale(Resp1),
+  Resp2 = scale(Resp2),
+  )
+
+popp1 = popp1 %>% mutate(
+  HR2 = scale(HR2),
+  HR1 = scale(HR1),
+  Resp1 = scale(Resp1),
+  Resp2 = scale(Resp2),
+  )
+
+
+popp = data.frame(popp)
+popp1 = data.frame(popp1)
+
+if (nrow(popp) > nrow(popp1)) {
+popp<-popp[1:nrow(popp1),]
+}
+
+if (nrow(popp1) > nrow(popp)) {
+popp1<-popp1[1:nrow(popp),]
+}
+
+popp$newHR1 = popp1$HR1
+popp1$newHR1 = popp$HR1
+
+vars = str_match(fil[i],"Study(\\S+)_G(\\S+)_T(\\d+)_(.*)")
+vars1 = str_match(fil[i+1],"Study(\\S+)_G(\\S+)_T(\\d+)_(.*)")
+
+vars = as.data.frame(t(vars[2:length(vars)]))
+vars1 = as.data.frame(t(vars1[2:length(vars1)]))
+
+names(vars) = c("study","Group","Trail", "col")
+names(vars1) = c("study","Group","Trail", "col")
+
+popp = cbind(popp, vars)
+popp1 = cbind(popp1, vars1)
+
+
+qd = bind_rows(qd, popp, popp1)
+return(qd)
+}}
+
+#Function for study 4. because its different
+#data1 = function(fil, x){
+for (i in x){
+   
+popp = read.csv(fil[i])
+popp1 = read.csv(fil[i+1])
+
+
+popp = popp %>% group(n=100, method = "greedy") %>% 
+  summarise(min = mean(min, na.rm = T),
+            HR1 = mean(HR1, na.rm = T),
+            HR2 = mean(HR2, na.rm = T),
+            Resp1 = mean(Resp1, na.rm = T),
+            Resp2 = mean(Resp2, na.rm = T )           
+            )
+
+popp$time = popp$min*60000
+
+popp1 = popp1 %>% group(n=100, method = "greedy") %>% 
+  summarise(min = mean(min, na.rm = T),
+            HR1 = mean(HR1, na.rm = T),
+            HR2 = mean(HR2, na.rm = T),
+            Resp1 = mean(Resp1, na.rm = T),
+            Resp2 = mean(Resp2, na.rm = T )           
+            )
+
+popp1$time = popp1$min*60000
+
+
+
+
+popp = popp %>% mutate(
+  HR2 = scale(HR2),
+  HR1 = scale(HR1),
+  Resp1 = scale(Resp1),
+  Resp2 = scale(Resp2),
+  )
+
+popp1 = popp1 %>% mutate(
+  HR2 = scale(HR2),
+  HR1 = scale(HR1),
+  Resp1 = scale(Resp1),
+  Resp2 = scale(Resp2),
+  )
+
+
+popp = data.frame(popp)
+popp1 = data.frame(popp1)
+
+if (nrow(popp) > nrow(popp1)) {
+popp<-popp[1:nrow(popp1),]
+}
+
+if (nrow(popp1) > nrow(popp)) {
+popp1<-popp1[1:nrow(popp),]
+}
+
+popp$newHR1 = popp1$HR1
+popp1$newHR1 = popp$HR1
+
+
+vars = str_match(fil[i],"Study(\\S+)_G(\\S+)_T(\\d+)_(.*)")
+vars1 = str_match(fil[i+1],"Study(\\S+)_G(\\S+)_T(\\d+)_(.*)")
+
+vars = as.data.frame(t(vars[2:length(vars)]))
+vars1 = as.data.frame(t(vars1[2:length(vars1)]))
+
+names(vars) = c("study","Group","Trail", "col")
+names(vars1) = c("study","Group","Trail", "col")
+
+popp = cbind(popp, vars)
+popp1 = cbind(popp1, vars1)
+
+
+
+qd = bind_rows(qd, popp, popp1)
+return(qd)
+}}
+
+```
+
+
+
+```{r}
+#since study 4 is different we start by only get including study1-3, we did this by putting them in a different folder. :/
+# files123 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/data",
+# "*Synchronous.csv", full.names = TRUE)
+# y = 1
+# qd = p[FALSE,]
+# 
+# for (y in c(1,3,5,7,9,11,13,15,17,18)){
+# qd = data(files123, y)
+# }
+# pp = qd
+# 
+# files1234 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/data",
+# "*TurnTaking.csv", full.names = TRUE)
+# qd = p[FALSE,]
+# y = 1
+# i = 1
+# for (y in c(1,3,5,7,9,11,13,15,17,18)){
+# qd = data(files1234, y)
+# }
+# pp1 = qd
+# 
+# 
+# files12345 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/data",
+# "*SelfPaced.csv", full.names = TRUE)
+# qd = p[FALSE,]
+# y = 1
+# i = 1
+# for (y in c(1,3)){
+# qd = data(files12345, y)
+# }
+# pp2 = qd
+# 
+# 
+# 
+# 
+# files123456 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/data",
+# "*Conversation.csv", full.names = TRUE)
+# qd = p[FALSE,]
+# y = 1
+# i = 1
+# for (y in c(1,3,5,7,9,11,13,14)){
+# qd = data(files123456, y)
+# }
+# pp3 = qd
+# 
+# #study 4
+# 
+# files1234567 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/study 4",
+# "*Synchronous.csv", full.names = TRUE)
+# 
+# qd = p[FALSE,]
+# y = 1
+# i = 1
+# for (y in c(1,3,5,7)){
+# qd = data1(files1234567, y)
+# }
+# pp4 = qd
+# 
+# 
+# files12345678 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/study 4",
+# "*TurnTaking.csv", full.names = TRUE)
+# 
+# 
+# qd = p[FALSE,]
+# y = 1
+# i = 1
+# for (y in c(1,3,5,7)){
+# qd = data1(files12345678, y)
+# }
+# pp5 = qd
+# 
+# 
+# files123456789 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/study 4",
+# "*Conversation.csv", full.names = TRUE)
+# 
+# qd = p[FALSE,]
+# y = 1
+# i = 1
+# for (y in c(1,3,5,7)){
+# qd = data1(files123456789, y)
+# }
+# pp6 = qd
+# 
+# 
+# files1234567891 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/study 4",
+# "*Conversation.csv", full.names = TRUE)
+# 
+# 
+# qd = p[FALSE,]
+# y = 1
+# i = 1
+# for (y in c(1,3,5,7)){
+# qd = data1(files1234567891, y)
+# }
+# pp7 = qd
+# 
+# 
+# 
+# files12345678912 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/study 4",
+# "*MovementGuided.csv", full.names = TRUE)
+# 
+# 
+# qd = p[FALSE,]
+# y = 1
+# i = 1
+# for (y in c(1,3,5,7)){
+# qd = data1(files12345678912, y)
+# }
+# pp8 = qd
+# 
+# 
+# 
+# files123456789123 = list.files("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/methods3_A4/study 4",
+# "*MovementCoop.csv", full.names = TRUE)
+# 
+# 
+# qd = p[FALSE,]
+# y = 1
+# i = 1
+# for (y in c(1,3,5,7)){
+# qd = data1(files123456789123, y)
+# }
+# pp9 = qd
+```
+
+
+```{r}
+# sur = bind_rows(pp, pp1,pp2,pp3,pp4,pp5,pp6,pp7,pp8,pp9)
+# 
+# sur$HR1 = removeOuts(sur$HR1, 2.5)
+# sur$HR2 = removeOuts(sur$HR2, 2.5)
+# sur$newHR1 = removeOuts(sur$newHR1, 2.5)
+# sur$type = "Sur"
+# 
+# sur$partici = as.numeric(sur$study)*100+as.numeric(sur$Group)
+# 
+# 
+# 
+# # Make the data long, so we can analyze both participants at the same time. Tip: you can use the function gather () 
+# 
+# sur = sur[!is.na(q$HR1), ]
+# sur = sur[!is.na(q$HR2), ]
+# sur = sur[!is.na(q$Resp1), ]
+# sur = sur[!is.na(q$Resp2), ]
+# 
+# sur = sur %>%group_by(partici, Trail) %>%  mutate(
+# HR1lag = lag(HR1),
+# HR2lag = lag(HR2),
+# Resp1lag = lag(Resp1),
+# Resp2lag = lag(Resp2)
+# )
+# 
+# 
+# # Generate a column for each: change in HR1, HR2, Resp1, Resp2
+# sur = sur %>% mutate(
+#   HR1change = HR1-HR1lag,
+#   HR2change = HR2-HR2lag,
+#   Resp1change = Resp1-Resp1lag,
+#   Resp2change = Resp2-Resp2lag
+# )
+# 
+# 
+# memory.size(30000)
+# 
+# sur1 = sur %>% pivot_longer(c(HR1, HR2, Resp1, Resp2), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self = HR, Resp_self = Resp)
+#   
+# sur2 = sur %>% pivot_longer(c(HR2, HR1, Resp2, Resp1), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique")%>% rename(HR_other = HR, Resp_other = Resp)
+# 
+# sur3 = sur %>% pivot_longer(c(HR1lag, HR2lag, Resp1lag, Resp2lag), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self_lag = HR, Resp_self_lag = Resp)
+# 
+# sur4 = sur %>% pivot_longer(c(HR2lag, HR1lag, Resp2lag, Resp1lag), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_other_lag = HR, Resp_other_lag = Resp)
+# 
+# sur5 = sur %>% pivot_longer(c(HR1change, HR2change, Resp1change, Resp2change), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self_change = HR, Resp_self_change = Resp)
+# 
+# sur6 = sur %>% pivot_longer(c(HR2change, HR1change, Resp2change, Resp1change), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_other_change = HR, Resp_other_change = Resp)
+# 
+# 
+# 
+# kk = sur1 %>% ungroup() %>% dplyr::select("HR_self", "Resp_self")
+# kk1 = sur2 %>% ungroup() %>% dplyr::select("HR_other", "Resp_other")
+# kk2 = sur3 %>% ungroup() %>% dplyr::select("HR_self_lag", "Resp_self_lag")
+# kk3 = sur4 %>% ungroup() %>% dplyr::select("HR_other_lag", "Resp_other_lag")
+# kk4 = sur5 %>% ungroup() %>% dplyr::select("HR_self_change", "Resp_self_change")
+# kk5 = sur6 %>% ungroup() %>% dplyr::select("HR_other_change", "Resp_other_change")
+# 
+# surr = bind_cols(kk,kk1,kk2,kk3,kk4,kk5)
+# 
+# surr$partici = sur1$partici
+# surr$partici = as.factor(surr$partici)
+# surr$col = sur1$col
+# surr$study = sur1$study
+# surr$Type = as.factor("Sur")
+# surr$dif = surr$HR_other_lag-surr$HR_self_lag
+# surr$HR_self_lag = -surr$HR_self_lag
+# 
+# 
+# k$ShuffleID = NULL
+# dfsur = rbind(surr, k)
+# 
+# 
+# dfsur$Type1 = ifelse(dfsur$Type == "Sur", "Surrogate", "Original")
+# 
+# dfsur$Type1 = as.factor(dfsur$Type1)
+# 
+# 
+# m141 = lmer(HR_self_change~((HR_self_lag+dif):col)*Type1+(1|partici), data = dfsur, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+# summary(m141)
+# 
+# 
+# 
+# m1411 = lmer(HR_self_change~((HR_self_lag+dif):col):Type1+(1|partici), data = dfsur, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+# summary(m1411)
+# 
+# memory.size(30000)
+# 
+# p31 = plot_model(m1411, type = "int", axis.title = "Change in heart rate", title = "Plot 4; surrogate controls vs the original data interaction estimates", legend.title = "Condition")
+# p31
+
+```
+ 
+```{r}
+#other way to surrogate where we make as many paris as possible, that is participant 1 from group 1 gets paired with all other participants from the same condition and same study.
+
+study4 = qd %>% filter(study == 4)
+  
+
+surrogateData <- data.frame()
+# listing all pairs
+Groups <- as.numeric(as.character(unique(study4$Group)))
+# all combinations of the 2 pairs
+SurrogateList <- expand.grid(a = Groups, b = Groups)
+SurrogateList = subset(SurrogateList, a != b)  
+i=1
+for (i in 1:nrow(SurrogateList)){ 
+x <- subset(study4, Group==SurrogateList$a[i])
+y <- subset(study4, Group==SurrogateList$b[i]) 
+newGroup <- c(800 + i) 
+for (co in c("Synchronous.csv","TurnTaking.csv","Conversation.csv","MovementGuided.csv","MovementCoop.csv")){ 
+if (co %in% unique(x$col) & co %in% unique(y$col)){ 
+z1 <- subset(x, col==co) 
+z2 <- subset(y, col==co) 
+if (nrow(z1) > nrow(z2)) { 
+z1<-z1[1:nrow(z2),]
+}
+if (nrow(z2) > nrow(z1)) {
+z2<-z2[1:nrow(z1),]
+}
+z1=as.data.frame(z1)
+z2=as.data.frame(z2)
+w1 <- z1 %>% mutate( 
+Group = as.factor(newGroup),
+HR2 = z2$HR2,
+Resp2 = z2$Resp2,
+HR2_lead = z2$HR2_lead,
+Resp2_lead = z2$Resp2_lead,
+HR2_change = z2$HR2_change,
+Resp2_change = z2$Resp2_change)
+if (nrow(surrogateData) == 0) {
+        surrogateData <- w1}
+      else {
+        surrogateData <- rbind(surrogateData, w1)
+      } }}}
+```
+
+
+```{r}
+#for study 3
+study3 = qd %>% filter(study == 3)
+  
+
+surrogateData1 <- data.frame()
+Groups <- as.numeric(as.character(unique(study3$Group))) 
+SurrogateList <- expand.grid(a = Groups, b = Groups) 
+SurrogateList = subset(SurrogateList, a != b) 
+i=1
+for (i in 1:nrow(SurrogateList)){ 
+x <- subset(study3, Group==SurrogateList$a[i]) 
+y <- subset(study3, Group==SurrogateList$b[i]) 
+newGroup <- c(800 + i)
+for (co in c("Synchronous.csv","TurnTaking.csv","Conversation.csv")){
+if (co %in% unique(x$col) & co %in% unique(y$col)){ 
+z1 <- subset(x, col==co) 
+z2 <- subset(y, col==co) 
+if (nrow(z1) > nrow(z2)) { 
+z1<-z1[1:nrow(z2),]
+}
+if (nrow(z2) > nrow(z1)) {
+z2<-z2[1:nrow(z1),]
+}
+z1=as.data.frame(z1)
+z2=as.data.frame(z2)
+w1 <- z1 %>% mutate( 
+Group = as.factor(newGroup),
+HR2 = z2$HR2,
+Resp2 = z2$Resp2,
+HR2_lead = z2$HR2_lead,
+Resp2_lead = z2$Resp2_lead,
+HR2_change = z2$HR2_change,
+Resp2_change = z2$Resp2_change)
+if (nrow(surrogateData1) == 0) {
+        surrogateData1 <- w1}
+      else {
+        surrogateData1 <- rbind(surrogateData1, w1)
+      } }}}
+```
+
+
+
+```{r}
+#for study 2
+study2 = qd %>% filter(study == 2)
+  
+
+surrogateData2 <- data.frame()
+Groups <- as.numeric(as.character(unique(study2$Group))) 
+SurrogateList <- expand.grid(a = Groups, b = Groups)
+SurrogateList = subset(SurrogateList, a != b)
+i=1
+for (i in 1:nrow(SurrogateList)){ 
+x <- subset(study2, Group==SurrogateList$a[i]) 
+y <- subset(study2, Group==SurrogateList$b[i]) 
+newGroup <- c(800 + i) 
+for (co in c("Synchronous.csv","TurnTaking.csv","Conversation.csv")){
+if (co %in% unique(x$col) & co %in% unique(y$col)){ 
+z1 <- subset(x, col==co) 
+z2 <- subset(y, col==co) 
+if (nrow(z1) > nrow(z2)) { 
+z1<-z1[1:nrow(z2),]
+}
+if (nrow(z2) > nrow(z1)) {
+z2<-z2[1:nrow(z1),]
+}
+z1=as.data.frame(z1)
+z2=as.data.frame(z2)
+w1 <- z1 %>% mutate( 
+Group = as.factor(newGroup),
+HR2 = z2$HR2,
+Resp2 = z2$Resp2,
+HR2_lead = z2$HR2_lead,
+Resp2_lead = z2$Resp2_lead,
+HR2_change = z2$HR2_change,
+Resp2_change = z2$Resp2_change)
+
+if (nrow(surrogateData2) == 0) {
+        surrogateData2 <- w1}
+      else {
+        surrogateData2 <- rbind(surrogateData2, w1)
+      } }}}
+```
+
+
+
+
+
+```{r}
+#for study 1
+study1 = qd %>% filter(study == 1)
+  
+
+surrogateData3 <- data.frame()
+Groups <- as.numeric(as.character(unique(study1$Group))) 
+SurrogateList <- expand.grid(a = Groups, b = Groups) 
+SurrogateList = subset(SurrogateList, a != b) 
+i=1
+for (i in 1:nrow(SurrogateList)){ 
+x <- subset(study1, Group==SurrogateList$a[i]) 
+y <- subset(study1, Group==SurrogateList$b[i]) 
+newGroup <- c(800 + i) 
+for (co in c("Synchronous.csv","TurnTaking.csv","SelfPaced.csv")){
+if (co %in% unique(x$col) & co %in% unique(y$col)){ 
+z1 <- subset(x, col==co) 
+z2 <- subset(y, col==co) 
+if (nrow(z1) > nrow(z2)) { 
+z1<-z1[1:nrow(z2),]
+}
+if (nrow(z2) > nrow(z1)) {
+z2<-z2[1:nrow(z1),]
+}
+z1=as.data.frame(z1)
+z2=as.data.frame(z2)
+w1 <- z1 %>% mutate( 
+Group = as.factor(newGroup),
+HR2 = z2$HR2,
+Resp2 = z2$Resp2,
+HR2_lead = z2$HR2_lead,
+Resp2_lead = z2$Resp2_lead,
+HR2_change = z2$HR2_change,
+Resp2_change = z2$Resp2_change)
+
+if (nrow(surrogateData3) == 0) {
+        surrogateData3 <- w1}
+      else {
+        surrogateData3 <- rbind(surrogateData3, w1)
+      } }}}
+```
+
+
+
+```{r}
+sur = rbind(surrogateData,surrogateData1,surrogateData2,surrogateData3)
+
+sur = sur %>%group_by(Group, Trail) %>%  mutate(
+HR1lag = lag(HR1),
+HR2lag = lag(HR2),
+Resp1lag = lag(Resp1),
+Resp2lag = lag(Resp2)
+)
+
+
+# Generate a column for each: change in HR1, HR2, Resp1, Resp2
+sur = sur %>% mutate(
+  HR1change = HR1-HR1lag,
+  HR2change = HR2-HR2lag,
+  Resp1change = Resp1-Resp1lag,
+  Resp2change = Resp2-Resp2lag
+)
+
+
+memory.size(30000)
+
+sur1 = sur %>% pivot_longer(c(HR1, HR2, Resp1, Resp2), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self = HR, Resp_self = Resp)
+  
+sur2 = sur %>% pivot_longer(c(HR2, HR1, Resp2, Resp1), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique")%>% rename(HR_other = HR, Resp_other = Resp)
+
+sur3 = sur %>% pivot_longer(c(HR1lag, HR2lag, Resp1lag, Resp2lag), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self_lag = HR, Resp_self_lag = Resp)
+
+sur4 = sur %>% pivot_longer(c(HR2lag, HR1lag, Resp2lag, Resp1lag), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_other_lag = HR, Resp_other_lag = Resp)
+
+sur5 = sur %>% pivot_longer(c(HR1change, HR2change, Resp1change, Resp2change), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_self_change = HR, Resp_self_change = Resp)
+
+sur6 = sur %>% pivot_longer(c(HR2change, HR1change, Resp2change, Resp1change), names_to = c(".value", "partici1"),names_pattern = "(HR|Resp)(\\d)", names_repair = "unique") %>% rename(HR_other_change = HR, Resp_other_change = Resp)
+
+
+
+kk = sur1 %>% ungroup() %>% dplyr::select("HR_self", "Resp_self")
+kk1 = sur2 %>% ungroup() %>% dplyr::select("HR_other", "Resp_other")
+kk2 = sur3 %>% ungroup() %>% dplyr::select("HR_self_lag", "Resp_self_lag")
+kk3 = sur4 %>% ungroup() %>% dplyr::select("HR_other_lag", "Resp_other_lag")
+kk4 = sur5 %>% ungroup() %>% dplyr::select("HR_self_change", "Resp_self_change")
+kk5 = sur6 %>% ungroup() %>% dplyr::select("HR_other_change", "Resp_other_change")
+
+surr = bind_cols(kk,kk1,kk2,kk3,kk4,kk5)
+
+surr$partici = sur1$Group
+surr$partici = as.factor(surr$partici)
+surr$col = sur1$col
+surr$study = sur1$study
+surr$Type = as.factor("Surrogate")
+surr$dif = surr$HR_other_lag-surr$HR_self_lag
+surr$HR_self_lag = -surr$HR_self_lag
+
+dfsur = rbind(surr, k)
+
+
+dfsur$Type = as.factor(dfsur$Type)
+```
+
+
+```{r}
+
+dfsur$Type = relevel(dfsur$Type, ref = "Surrogate")
+
+m141 = lmer(HR_self_change~((HR_self_lag+dif):col)*Type+(1|partici), data = dfsur, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+summary(m141)
+
+
+
+m1411 = lmer(HR_self_change~((HR_self_lag+dif):col):Type+(1|partici), data = dfsur, REML=F,control = lmerControl(optimizer = "bobyqa", calc.derivs = FALSE))
+summary(m1411)
+
+
+p31 = plot_model(m1411, type = "int", axis.title = "Change in heart rate", title = "Plot 4; surrogate controls vs the original data interaction estimates", legend.title = "Condition")
+p31
+
+
+```
+
+ 
+ 

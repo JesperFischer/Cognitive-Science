@@ -1,0 +1,979 @@
+---
+title: "preprocessing af real data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(brms)
+library(tidyverse)
+library(rethinking)
+library(metafor)
+library(bayesplot)
+```
+
+## R Markdown
+
+```{r}
+#getting the data:
+setwd("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/soccult thingy/real_real")
+
+tbl <-
+    list.files(pattern = "*.csv") %>% 
+    map_df(~read_csv(.))
+#rounding all the ordinal variables
+tbl[,c(9:25,27:43,45:61)] = round(tbl[,c(9:25,27:43, 45:61)])
+
+# making an empty dataframe to put the preprocessed data into:
+php2 = data.frame(NULL)
+
+#loop to get all the data needed for H1
+for (i in 1:length(data.frame(t(tbl)))){
+tbl1 =   tbl[i,]
+
+
+#extracting the right columns
+tbl2 <- tbl1[,c(1,10,12,14,16,18,20,22,24,64)]
+
+
+#delete .mp4 in the video column
+tbl2$con = substring(tbl2[1,1], first = 3, last = 3)
+tbl2[1,1] = substr(tbl2[1,1], start = 0, stop = 1)
+
+#only first hypothesis columns:
+hp1 = tbl2[,c(1,3,6,8,10,11)]
+hp1$vid_nr = 1
+#rename
+names(hp1)[1] = "video"
+names(hp1)[2] = "jeg_følte"
+names(hp1)[3] = "det_gav"
+names(hp1)[4] = "det_var"
+
+
+#next we do the same step for the second video the participant saw:
+tbl2 <- tbl1[,c(2,28,30,32,34,36,38,40,42,64)]
+
+
+#delete .mp4 in video thingy
+tbl2$con = substring(tbl2[1,1], first = 3, last = 3)
+tbl2[1,1] = substr(tbl2[1,1], start = 0, stop = 1)
+
+hp11 = tbl2[,c(1,3,6,8,10,11)]
+hp11$vid_nr = 2
+names(hp11)[1] = "video"
+names(hp11)[2] = "jeg_følte"
+names(hp11)[3] = "det_gav"
+names(hp11)[4] = "det_var"
+
+#same same for video 3 the first participant saw
+
+tbl2 <- tbl1[,c(3,46,48,50,52,54,56,58,60,64)]
+#delete .mp4 in video thingy
+tbl2$con = substring(tbl2[1,1], first = 3, last = 3)
+tbl2[1,1] = substr(tbl2[1,1], start = 0, stop = 1)
+
+hp111 = tbl2[,c(1,3,6,8,10,11)]
+hp111$vid_nr = 3
+names(hp111)[1] = "video"
+names(hp111)[2] = "jeg_følte"
+names(hp111)[3] = "det_gav"
+names(hp111)[4] = "det_var"
+
+
+#giving him id corresponding to the loop
+hp1$id = i
+hp11$id = i
+hp111$id = i
+#binding it all in a dataframe
+php1 = rbind(hp1,hp11,hp111)
+#php2 gets all the final preprocessed data.
+php2 = rbind(php1,php2)
+
+
+}
+
+
+#data til model
+data = pivot_longer(php2,cols = c(jeg_følte, det_gav, det_var))
+#naming the last column, which is the "how much did you notice the chat column".
+names(data)[2] = "chat"
+
+```
+
+
+```{r}
+#models.
+bprob_m0 = bf(value ~ 1+con+(1|id)+(1|name), family = cumulative("probit"))#+lf(disc~0+con, cmc = FALSE)
+
+bprob_m1 = bf(value ~ 1+con+(1|id)+(1|name), family = cumulative("probit"))+lf(disc~0+con, cmc = FALSE)
+
+
+
+View(get_prior(bprob_m0, data = data))
+View(get_prior(bprob_m1, data = data))
+
+#prior for m_0 with quite conservative priors
+prior_main_m00 = c(
+   #prior(normal(0,0.5), class = b),
+   prior(normal(0.25,0.5), class = b, coef = conp),
+   prior(normal(-0.25,0.5), class = b, coef = conn),
+   #prior(normal(0,4), class = Intercept),
+   prior(normal(-3,3), class = Intercept, coef = 1),
+   prior(normal(-2,3), class = Intercept, coef = 2),
+   prior(normal(-1,3), class = Intercept, coef = 3),
+   prior(normal(0,3), class = Intercept, coef = 4),
+   prior(normal(1,3), class = Intercept, coef = 5),
+   prior(normal(2,3), class = Intercept, coef = 6),
+   prior(normal(2,1), class = sd, group = id),
+   prior(normal(0.5,0.5), class = sd, group = name))
+
+
+#prior for m_1 with quite conservative priors
+
+prior_main_m11 = c(
+   #prior(normal(0,0.5), class = b),
+   prior(normal(0.25,0.5), class = b, coef = conp),
+   prior(normal(-0.25,0.5), class = b, coef = conn),
+   #prior(normal(0,4), class = Intercept),
+   prior(normal(-3,3), class = Intercept, coef = 1),
+   prior(normal(-2,3), class = Intercept, coef = 2),
+   prior(normal(-1,3), class = Intercept, coef = 3),
+   prior(normal(0,3), class = Intercept, coef = 4),
+   prior(normal(1,3), class = Intercept, coef = 5),
+   prior(normal(2,3), class = Intercept, coef = 6),
+   prior(normal(2,1), class = sd, group = id),
+   prior(normal(0.5,0.5), class = sd, group = name),
+   prior(normal(1,0.5), dpar = disc))
+
+
+
+
+#model0
+prior_main_m0 = brm(
+  bprob_m0,
+  data,
+  family = cumulative("probit"),
+  sample_prior = "only",
+  prior = prior_main_m00,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "prior_main_m0",
+)
+#prior_predictive check
+#pp_check(prior_main_m0, nsamples = 100)
+
+#model1
+prior_main_m1 = brm(
+  bprob_m1,
+  data,
+  family = cumulative("probit"),
+  sample_prior = "only",
+  prior = prior_main_m11,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "prior_main_m1",
+)
+#prior_predictive check
+#pp_check(prior_main_m1, nsamples = 100)
+
+
+#model0
+main_m0 = brm(
+  bprob_m0,
+  data,
+  family = cumulative("probit"),
+  sample_prior = T,
+  iter = 4000,
+  prior = prior_main_m00,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "main_m0",
+)
+#prior_predictive check
+pp_check(main_m0, nsamples = 100)
+summary(main_m0)
+mcmc_trace(main_m0, pars = c("b_conp", "b_conn"))
+mcmc_rank_overlay(main_m0, pars = c("b_conp", "b_conn"))
+
+
+#model1
+main_m1 = brm(
+  bprob_m1,
+  data,
+  family = cumulative("probit"),
+  sample_prior = T,
+  iter = 4000,
+  prior = prior_main_m11,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "main_m1",
+)
+pp_check(main_m1, nsamples = 100)
+summary(main_m1)
+
+
+mcmc_trace(main_m1, pars = c("b_conp", "b_conn"))
+mcmc_rank_overlay(main_m1, pars = c("b_conp", "b_conn"))
+
+
+
+posterior = posterior_samples(main_m0)
+
+#prior - posterior updates
+ggplot(posterior)+ geom_density(aes(posterior$b_conn, fill = "posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conn, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("standardized scale")+ggtitle("Prior - posterior update for the difference between Neutral and Negative condition")
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conp, fill = "posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conp, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("standardized scale")+ggtitle("Prior - posterior update for the difference between Neutral and Positive condition")
+
+
+#for the second model
+posterior1 = posterior_samples(main_m1)
+
+
+ggplot(posterior1)+ geom_density(aes(posterior1$b_conn, fill = "posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior1$prior_b_conn, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("standardized scale")+ggtitle("Prior - posterior update for the difference between Neutral and Negative condition")
+
+ggplot(posterior1)+ geom_density(aes(posterior1$b_conp, fill = "posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior1$prior_b_conp, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("standardized scale")+ggtitle("Prior - posterior update for the difference between Neutral and Positive condition")
+
+
+summary(main_m0)
+hypothesis(main_m0, "conp>conn")
+
+
+summary(main_m1)
+hypothesis(main_m1, "conp>conn")
+
+
+
+#loo_comparison of the two models:
+
+main_m0 = add_criterion(main_m0, criterion = "loo", reloo = T, seed = TRUE)
+main_m1 = add_criterion(main_m1, criterion = "loo", reloo = T, seed  = TRUE)
+
+loo_model_weights(main_m0, main_m1)
+
+loo_compare(main_m0, main_m1)
+```
+
+
+
+```{r}
+#interaction models:
+
+
+
+
+
+
+
+```
+
+
+
+
+
+```{r}
+#time - hypothesis same preprocessing as above just with other columns (other responses)
+setwd("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/soccult thingy/real_real")
+
+tbl <-
+    list.files(pattern = "*.csv") %>% 
+    map_df(~read_csv(.))
+tphp2 = data.frame(NULL)
+tbl[,c(9:15,17:25,27:33,35:43,45:51,53:61)] = round(tbl[,c(9:15,17:25,27:33,35:43,45:51,53:61)])
+
+
+for (i in 1:length(data.frame(t(tbl)))){
+
+tbl1 =   tbl[i,]
+
+tbl2 <- tbl1[,c(1,16,64)]
+
+#delete .mp4 in video thingy
+tbl2$con = substring(tbl2[1,1], first = 3, last = 3)
+tbl2[1,1] = substr(tbl2[1,1], start = 0, stop = 1)
+
+#only first hypothesis:
+thp = tbl2
+thp$vid_nr = 1
+names(thp)[1] = "video"
+names(thp)[2] = "tid"
+
+
+
+tbl2 <- tbl1[,c(2,34,64)]
+
+#delete .mp4 in video thingy
+tbl2$con = substring(tbl2[1,1], first = 3, last = 3)
+tbl2[1,1] = substr(tbl2[1,1], start = 0, stop = 1)
+
+#only first hypothesis:
+thp1 = tbl2
+thp1$vid_nr = 2
+names(thp1)[1] = "video"
+names(thp1)[2] = "tid"
+
+
+tbl2 <- tbl1[,c(3,52, 64)]
+
+#delete .mp4 in video thingy
+tbl2$con = substring(tbl2[1,1], first = 3, last = 3)
+tbl2[1,1] = substr(tbl2[1,1], start = 0, stop = 1)
+
+#only first hypothesis:
+thp2 = tbl2
+thp2$vid_nr = 3
+names(thp2)[1] = "video"
+names(thp2)[2] = "tid"
+
+thp$id = i
+thp1$id = i
+thp2$id = i
+
+tphp1 = rbind(thp,thp1,thp2)
+
+tphp2 = rbind(tphp1,tphp2)
+}
+
+tphp2$tid = (tphp2$tid-1)*10+140
+
+names(tphp2)[3] = "chat"
+```
+
+
+```{r}
+#models
+time_m0 = bf(tid ~ 0+con+(1|id)+(1|video), family = gaussian())
+time_m1 = bf(tid ~ 0+con+(con|id)+(con|video), family = gaussian())
+
+View(get_prior(time_m0, data = tphp2))
+View(get_prior(time_m1, data = tphp2))
+
+
+#priors
+prior_time_m00 = c(
+   prior(normal(170,30), class = b, coef = conp),
+   prior(normal(170,30), class = b, coef = conn),
+   prior(normal(170,30), class = b, coef = conc),
+   prior(normal(10,5), class = sd, group = id),
+   prior(normal(1,0.5), class = sd, group = video),
+   prior(normal(17,5), class = sigma))
+
+
+prior_time_m11 = c(
+   prior(normal(170,30), class = b, coef = conp),
+   prior(normal(170,30), class = b, coef = conn),
+   prior(normal(170,30), class = b, coef = conc),
+   prior(normal(10,5), class = sd, coef = Intercept, group = id),
+   prior(normal(1,0.5), class = sd, coef = conn, group = id),
+   prior(normal(1,0.5), class = sd, coef = conp, group = id),
+   prior(normal(1,0.5), class = sd, coef = Intercept, group = video),
+   prior(normal(1,0.5), class = sd, coef = conn, group = video),
+   prior(normal(1,0.5), class = sd, coef = conp, group = video),
+   prior(normal(17,5), class = sigma))
+
+
+#fitting
+
+time_prior_m0 = brm(
+  time_m0,
+  tphp2,
+  family = gaussian(),
+  sample_prior = "only",
+  prior = prior_time_m00,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "time_prior_m0",
+)
+
+pp_check(time_prior_m0, nsamples = 100)
+
+time_prior_m1 = brm(
+  time_m1,
+  tphp2,
+  family = gaussian(),
+  sample_prior = "only",
+  prior = prior_time_m11,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "time_prior_m1",
+)
+
+pp_check(time_prior_m1, nsamples = 100)
+
+
+
+time_model_m0 = brm(
+  time_m0,
+  tphp2,
+  family = gaussian(),
+  sample_prior = T,
+  prior = prior_time_m00,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "time_model_m0",
+)
+
+pp_check(time_model_m0, nsamples = 100)
+
+
+mcmc_trace(time_model_m0, pars = c("b_conp", "b_conn", "b_conc"))
+mcmc_rank_overlay(time_model_m0, pars = c("b_conp", "b_conn", "b_conc"))
+
+
+
+
+time_model_m1 = brm(
+  time_m1,
+  tphp2,
+  family = gaussian(),
+  sample_prior = T,
+  prior = prior_time_m11,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "time_model_m1",
+)
+
+pp_check(time_model_m1, nsamples = 100)
+
+mcmc_trace(time_model_m1, pars = c("b_conp", "b_conn", "b_conc"))
+mcmc_rank_overlay(time_model_m1, pars = c("b_conp", "b_conn", "b_conc"))
+
+
+#prior posterior updates
+
+posterior = posterior_samples(time_model_m0)
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conc, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conc, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("perception of passage of time")+ggtitle("prior - posterior update for the Neutral condition")
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conp, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conp, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("perception of passage of time")+ggtitle("prior - posterior update for the Positive condition")
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conn, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conn, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("perception of passage of time")+ggtitle("prior - posterior update for the Negative condition")
+
+#second model:
+
+posterior = posterior_samples(time_model_m1)
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conc, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conc, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("perception of passage of time")+ggtitle("prior - posterior update for the Neutral condition")
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conp, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conp, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("perception of passage of time")+ggtitle("prior - posterior update for the Positive condition")
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conn, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conn, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("perception of passage of time")+ggtitle("prior - posterior update for the Negative condition")
+
+#hypothesis testing
+
+
+hypothesis(time_model_m0, "conc>conn")
+hypothesis(time_model_m0, "conp>conc")
+hypothesis(time_model_m0, "conp>conn")
+
+hypothesis(time_model_m1, "conc>conn")
+hypothesis(time_model_m1, "conc>conn")
+hypothesis(time_model_m1, "conc>conn")
+
+
+
+#model comparison
+
+
+
+time_model_m0 = add_criterion(time_model_m0, criterion = "loo", reloo = T)
+time_model_m1 = add_criterion(time_model_m1, criterion = "loo", reloo = T)
+
+loo_model_weights(time_model_m0, time_model_m1)
+
+loo_compare(time_model_m0, time_model_m1)
+
+```
+
+
+
+
+
+```{r}
+#playing with the interaction model
+time = bf(tid ~ 0+con+con:chat+(1|id)+(1|video), family = gaussian())
+
+
+View(get_prior(time, data = tphp2))
+
+prior_time = c(
+   prior(normal(170,30), class = b, coef = conp),
+   prior(normal(170,30), class = b, coef = conn),
+   prior(normal(170,30), class = b, coef = conc),
+   prior(normal(10,10), class = b, coef = conc:chat),
+   prior(normal(10,10), class = b, coef = conn:chat),
+   prior(normal(10,10), class = b, coef = conp:chat),
+   prior(normal(10,5), class = sd, group = id),
+   prior(normal(1,0.5), class = sd, group = video),
+   prior(normal(17,5), class = sigma))
+
+
+time= brm(
+  time,
+  tphp2,
+  family = gaussian(),
+  sample_prior = T,
+  prior = prior_time,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  #file = "time_model_m0",
+)
+
+summary(time)
+
+tphp2 %>% group_by(con) %>% summarize(mean = mean(tid))
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+#same preprocessing for the last hypothesis.
+
+setwd("C:/Users/Jespe/OneDrive/Dokumenter/GitHub/soccult thingy/real_real")
+
+tbl <-
+    list.files(pattern = "*.csv") %>% 
+    map_df(~read_csv(.))
+aphp2 = data.frame(NULL)
+
+tbl[,c(9:25,27:43,45:61)] = round(tbl[,c(9:25,27:43, 45:61)])
+
+for (i in 1:length(data.frame(t(tbl)))){
+
+tbl1 =   tbl[i,]
+
+tbl2 <- tbl1[,c(1,10,14,20,24,64)]
+
+#delete .mp4 in video thingy
+tbl2$con = substring(tbl2[1,1], first = 3, last = 3)
+tbl2[1,1] = substr(tbl2[1,1], start = 0, stop = 1)
+
+#only first hypothesis:
+ahp1 = tbl2
+ahp1$vid_nr = 1
+names(ahp1)[1] = "video"
+names(ahp1)[2] = "sp1"
+names(ahp1)[3] = "sp2"
+names(ahp1)[4] = "sp3"
+names(ahp1)[5] = "sp4"
+
+
+
+tbl2 <- tbl1[,c(2,28,32,38,42,64)]
+
+#delete .mp4 in video thingy
+tbl2$con = substring(tbl2[1,1], first = 3, last = 3)
+tbl2[1,1] = substr(tbl2[1,1], start = 0, stop = 1)
+
+
+ahp2 = tbl2
+ahp2$vid_nr = 2
+names(ahp2)[1] = "video"
+names(ahp2)[2] = "sp1"
+names(ahp2)[3] = "sp2"
+names(ahp2)[4] = "sp3"
+names(ahp2)[5] = "sp4"
+
+#same same
+
+tbl2 <- tbl1[,c(3,46,50,56,60,64)]
+
+#delete .mp4 in video thingy
+tbl2$con = substring(tbl2[1,1], first = 3, last = 3)
+tbl2[1,1] = substr(tbl2[1,1], start = 0, stop = 1)
+
+
+ahp3 = tbl2
+ahp3$vid_nr = 3
+names(ahp3)[1] = "video"
+names(ahp3)[2] = "sp1"
+names(ahp3)[3] = "sp2"
+names(ahp3)[4] = "sp3"
+names(ahp3)[5] = "sp4"
+
+
+
+ahp1$id = i
+ahp2$id = i
+ahp3$id = i
+
+aphp1 = rbind(ahp1,ahp2,ahp3)
+
+aphp2 = rbind(aphp1,aphp2)
+
+
+}
+```
+
+
+```{r}
+#now we make the actual thing we want to predict the absolute difference between the real answer and participants' answers
+
+svar_video2 = c(8,10,5,4)
+svar_video3 = c(10,15,16,7)
+svar_video1 = c(18,4,4,3)
+
+
+
+
+aphp2  = aphp2 %>% mutate(sp1 = sp1*20/7,
+                          sp2 = sp2*20/7,
+                          sp3 = sp3*20/7,
+                          sp4 = sp4*20/7,
+                          )
+
+
+
+aphp4 = data.frame()
+for (i in 1:length(data.frame(t(aphp2)))){
+aphp3 = aphp2[i,]
+  
+if(aphp3$video == 1){
+  
+  aphp3$dif1 = abs(svar_video1[1]-aphp3$sp1)
+  aphp3$dif2 = abs(svar_video1[2]-aphp3$sp2)
+  aphp3$dif3 = abs(svar_video1[3]-aphp3$sp3)
+  aphp3$dif4 = abs(svar_video1[4]-aphp3$sp4)
+  
+}
+
+if(aphp3$video == 2){
+  
+  aphp3$dif1 = abs(svar_video2[1]-aphp3$sp1)
+  aphp3$dif2 = abs(svar_video2[2]-aphp3$sp2)
+  aphp3$dif3 = abs(svar_video2[3]-aphp3$sp3)
+  aphp3$dif4 = abs(svar_video2[4]-aphp3$sp4)
+  
+}
+
+if(aphp3$video == 3){
+  
+  aphp3$dif1 = abs(svar_video3[1]-aphp3$sp1)
+  aphp3$dif2 = abs(svar_video3[2]-aphp3$sp2)
+  aphp3$dif3 = abs(svar_video3[3]-aphp3$sp3)
+  aphp3$dif4 = abs(svar_video3[4]-aphp3$sp4)
+  
+}
+
+aphp4 = rbind(aphp4, aphp3)
+
+
+
+}
+
+da[,11] = round(da[,11])
+
+
+
+da = pivot_longer(aphp4, cols = c("dif1","dif2","dif3","dif4"))
+names(da)[6] = "chat"
+```
+
+
+
+
+
+
+
+```{r}
+
+#models
+
+correct_m0 = bf(value ~ 0+con+(1|id)+(1|name), family = gaussian())
+correct_m1 = bf(value ~ 0+con+(1|id)+(1|name), family = student())
+correct_m2 = bf(value ~ 0+con+(1|id)+(1|name), family = lognormal())
+
+
+View(get_prior(correct_m3, data = da))
+
+
+prior_mem_m0 = c(
+   #prior(normal(4,3), class = b),
+   prior(normal(4.3,2), class = b, coef = conp),
+   prior(normal(4.3,2), class = b, coef = conc),
+   prior(normal(4.6,2), class = b, coef = conn),
+   #prior(normal(4,4), class = Intercept),
+   #prior(normal(0,1), class = Intercept, coef = 1),
+   #prior(normal(0,1), class = Intercept, coef = 2),
+   #prior(normal(0,1), class = Intercept, coef = 3),
+   #prior(normal(0,1), class = Intercept, coef = 4),
+   prior(normal(3,1.5), class = sd, group = id),
+   prior(normal(1,1), class = sd, group = name),
+   prior(normal(3.5,1.5), class = sigma))
+
+prior_mem_m1 = c(
+   #prior(normal(4,3), class = b),
+   prior(normal(4.3,2), class = b, coef = conp),
+   prior(normal(4.3,2), class = b, coef = conc),
+   prior(normal(4.6,2), class = b, coef = conn),
+   #prior(normal(4,4), class = Intercept),
+   #prior(normal(0,1), class = Intercept, coef = 1),
+   #prior(normal(0,1), class = Intercept, coef = 2),
+   #prior(normal(0,1), class = Intercept, coef = 3),
+   #prior(normal(0,1), class = Intercept, coef = 4),
+   prior(normal(3,1.5), class = sd, group = id),
+   prior(normal(1,1), class = sd, group = name),
+   prior(normal(3.5,1.5), class = sigma),
+   prior(normal(2,0.5), class = nu))
+
+
+mean(log(da$value))
+sd(log(da$value))
+
+da %>% group_by(con) %>% summarize(mean = mean(log(value)))
+
+prior_mem_m2 = c(
+   #prior(normal(4,3), class = b),
+   prior(normal(1.06,1), class = b, coef = conp),
+   prior(normal(1.06,1), class = b, coef = conc),
+   prior(normal(1.11,1), class = b, coef = conn),
+   #prior(normal(4,4), class = Intercept),
+   #prior(normal(0,1), class = Intercept, coef = 1),
+   #prior(normal(0,1), class = Intercept, coef = 2),
+   #prior(normal(0,1), class = Intercept, coef = 3),
+   #prior(normal(0,1), class = Intercept, coef = 4),
+   prior(normal(1,1), class = sd, group = id),
+   prior(normal(1,1), class = sd, group = name),
+   prior(normal(1,1), class = sigma))
+
+
+
+prior_correct_m0 = brm(
+  correct_m0,
+  da,
+  family = gaussian(),
+  sample_prior = "only",
+  prior = prior_mem_m0,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "prior_correct_m0",
+)
+
+
+pp_check(prior_correct_m0, nsamples = 100)
+
+
+prior_correct_m1 = brm(
+  correct_m1,
+  da,
+  family = student(),
+  sample_prior = "only",
+  prior = prior_mem_m1,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "prior_correct_m1",
+)
+
+plot = pp_check(prior_correct_m1, nsamples = 100)
+plot+xlim(-20,20)
+
+prior_correct_m2 = brm(
+  correct_m2,
+  da,
+  family = lognormal(),
+  sample_prior = "only",
+  prior = prior_mem_m2,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "prior_correct_m2",
+)
+
+plot = pp_check(prior_correct_m2, nsamples = 100)
+plot+xlim(0,10)
+
+
+model_correct_m0 = brm(
+  correct_m0,
+  da,
+  family = gaussian(),
+  sample_prior = T,
+  prior = prior_mem_m0,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "model_correct_m0",
+)
+
+pp_check(model_correct_m0, nsamples = 100)
+
+
+
+model_correct_m1 = brm(
+  correct_m1,
+  da,
+  family = student(),
+  sample_prior = T,
+  prior = prior_mem_m1,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "model_correct_m1",
+)
+
+plot = pp_check(model_correct_m1, nsamples = 100)
+plot+xlim(-20,20)
+
+
+
+mcmc_trace(model_correct_m1, pars = c("b_conp", "b_conn", "b_conc"))
+mcmc_rank_overlay(model_correct_m1, pars = c("b_conp", "b_conn", "b_conc"))
+
+
+
+model_correct_m2 = brm(
+  correct_m2,
+  da,
+  family = lognormal(),
+  sample_prior = T,
+  prior = prior_mem_m2,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  file = "model_correct_m2",
+)
+
+plot = pp_check(model_correct_m2, nsamples = 100)
+plot+xlim(0,15)
+
+
+summary(model_correct_m2)
+
+
+
+mcmc_trace(model_correct_m2, pars = c("b_conp", "b_conn", "b_conc"))
+mcmc_rank_overlay(model_correct_m2, pars = c("b_conp", "b_conn", "b_conc"))
+
+
+
+
+
+
+
+
+#prior - posterior updates:
+
+posterior = posterior_samples(model_correct_m1)
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conc, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conc, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("Absolute difference between correct response and participant reponse")+ggtitle("prior-posterior update for the Neutral condition")
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conn, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conn, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("Absolute difference between correct response and participant")+ggtitle("prior-posterior update for the Negative condition")
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conp, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conp, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("Absolute difference between correct response and participant")+ggtitle("prior-posterior update for the Positive condition")
+
+
+
+
+
+
+#log-normal prior - posterior updates:
+
+
+posterior = posterior_samples(model_correct_m2)
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conc, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conc, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("log scale")+ggtitle("prior-posterior update for the Neutral condition")
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conn, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conn, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("log scale")+ggtitle("prior-posterior update for the Negative condition")
+
+ggplot(posterior)+ geom_density(aes(posterior$b_conp, fill="posterior"), colour = "red", alpha = .3)+
+  geom_density(aes(posterior$prior_b_conp, fill = "prior"), colour = "blue", alpha = .5)+theme_classic()+xlab("log scale")+ggtitle("prior-posterior update for the Positive condition")
+
+
+
+
+```
+
+
+
+
+
+```{r}
+#playing with the interaction model for the log-normal model
+
+
+cor = bf(value ~ 0+con+con:chat+(1|id)+(1|name), family = lognormal())
+
+
+View(get_prior(con, data = da))
+
+prior_time = c(
+   prior(normal(170,30), class = b, coef = conp),
+   prior(normal(170,30), class = b, coef = conn),
+   prior(normal(170,30), class = b, coef = conc),
+   prior(normal(10,10), class = b, coef = conc:chat),
+   prior(normal(10,10), class = b, coef = conn:chat),
+   prior(normal(10,10), class = b, coef = conp:chat),
+   prior(normal(10,5), class = sd, group = id),
+   prior(normal(1,0.5), class = sd, group = video),
+   prior(normal(17,5), class = sigma))
+
+
+prior_cor = c(
+   #prior(normal(4,3), class = b),
+   prior(normal(1.06,1), class = b, coef = conp),
+   prior(normal(1.06,1), class = b, coef = conc),
+   prior(normal(1.11,1), class = b, coef = conn),
+   prior(normal(0.5,0.5), class = b, coef = conc:chat),
+   prior(normal(0.5,0.5), class = b, coef = conn:chat),
+   prior(normal(0.5,0.5), class = b, coef = conp:chat),
+   #prior(normal(4,4), class = Intercept),
+   #prior(normal(0,1), class = Intercept, coef = 1),
+   #prior(normal(0,1), class = Intercept, coef = 2),
+   #prior(normal(0,1), class = Intercept, coef = 3),
+   #prior(normal(0,1), class = Intercept, coef = 4),
+   prior(normal(1,1), class = sd, group = id),
+   prior(normal(1,1), class = sd, group = name),
+   prior(normal(1,1), class = sigma))
+
+
+pup= brm(
+  cor,
+  da,
+  family = lognormal(),
+  sample_prior = T,
+  prior = prior_cor,
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20),
+  #file = "time_model_m0",
+)
+
+
+summary(pup)
+
+```
+
+

@@ -1,0 +1,210 @@
+---
+title: "Assignment 1 - Data Cleaning"
+author: "Group 9: Jesper Fischer Ehmsen"
+date: "03.09.2020"
+output: html_document
+---
+
+# Assignment 1, Language development in Autism Spectrum Disorder (ASD) - Brushing up your code skills
+.
+Reference to the study: https://www.ncbi.nlm.nih.gov/pubmed/30396129
+
+Background: Autism Spectrum Disorder (ASD) is often related to language impairment, and language impairment strongly affects the patients ability to function socially (maintaining a social network, thriving at work, etc.). It is therefore crucial to understand how language abilities develop in children with ASD, and which factors affect them (to figure out e.g. how a child will develop in the future and whether there is a need for language therapy).
+However, language impairment is always quantified by relying on the parent, teacher or clinician subjective judgment of the child, and measured very sparcely (e.g. at 3 years of age and again at 6). 
+
+In this study the researchers videotaped circa 30 kids with ASD and circa 30 comparison kids (matched by linguistic performance at visit 1) for ca. 30 minutes of naturalistic interactions with a parent. They repeated the data collection 6 times per kid, with 4 months between each visit. Then the researchers transcribed the data and counted: 
+i) the amount of words that each kid uses in each video. Same for the parent.
+ii) the amount of unique words that each kid uses in each video. Same for the parent.
+iii) the amount of morphemes per utterance (Mean Length of Utterance) displayed by each child in each video. Same for the parent. 
+
+Different researchers involved in the project provide you with different datasets: 
+1) demographic and clinical data about the children (recorded by a clinical psychologist)
+2) length of utterance data (calculated by a linguist)
+3) amount of unique and total words used (calculated by a jack-of-all-trade, let's call him RF)
+
+## 2. Data cleaning
+
+```{r message=FALSE, warning=FALSE}
+pacman::p_load(tidyverse,janitor, stringr)
+```
+
+```{r}
+#loading the three data sets, which contain different data we need for the analysis. 
+
+# Demographic data for the participants
+demo_train <- read.csv("demo_train.csv")
+#Length of utterance data
+LU_train <- read.csv("LU_train.csv")
+#Word data
+token_train <- read.csv("token_train.csv")
+```
+
+### 2.a
+
+Some columns have different names in the three datasets. We'll fix this. 
+
+```{r}
+#renaming columns that are not the same in all three datasets
+demo_train = demo_train %>% 
+  rename("SUBJ" = "Child.ID")%>% 
+  rename("VISIT" = "Visit")
+```
+
+### 2.b
+
+Some datapoints are reported differently. We also fix this.
+I.e. the visit number is reported either as "Visit1" or just "1"
+
+```{r}
+#removing all letters (the word "visit) from LU and token train's visit column, so that all datasets only contain numbers.
+LU_train$VISIT <- str_extract(LU_train$VISIT,"\\d")    
+token_train$VISIT <- str_extract(token_train$VISIT,"\\d")
+
+```
+
+### 2.c
+
+Similarly, periods are used differently in the datasets.
+
+
+```{r}
+#removing all periods in the ID columns
+
+LU_train$SUBJ <- str_replace_all(LU_train$SUBJ,"[.]","")   
+token_train$SUBJ <- str_replace_all(token_train$SUBJ,"[.]","")   
+demo_train$SUBJ <- str_replace_all(demo_train$SUBJ,"[.]","")  
+
+```
+
+### 2.d
+
+Next, we make a subset, containing only the relevant columns we will later need for our analysis. 
+
+```{r}
+
+demo_train <-  select(demo_train, SUBJ, VISIT, Diagnosis, Ethnicity, Gender, Age, ADOS, MullenRaw, ExpressiveLangRaw, Socialization) 
+
+LU_train <- select(LU_train, SUBJ, VISIT, MOT_MLU, CHI_MLU)
+
+token_train <- select(token_train, VISIT, SUBJ, VISIT, types_MOT, types_CHI, tokens_MOT, tokens_CHI)
+
+```
+
+
+Most variables should make sense, here the less intuitive ones. 
+* ADOS (Autism Diagnostic Observation Schedule) indicates the severity of the autistic symptoms (the higher the score, the worse the symptoms). Ref: https://link.springer.com/article/10.1023/A:1005592401947
+* MLU stands for mean length of utterance (usually a proxy for syntactic complexity)
+* types stands for unique words (e.g. even if "doggie" is used 100 times it only counts for 1)
+* tokens stands for overall amount of words (if "doggie" is used 100 times it counts for 100) 
+* MullenRaw indicates non verbal IQ, as measured by Mullen Scales of Early Learning (MSEL https://link.springer.com/referenceworkentry/10.1007%2F978-1-4419-1698-3_596)
+* ExpressiveLangRaw indicates verbal IQ, as measured by MSEL
+* Socialization indicates social interaction skills and social responsiveness, as measured by Vineland (https://cloudfront.ualberta.ca/-/media/ualberta/faculties-and-programs/centres-institutes/community-university-partnership/resources/tools---assessment/vinelandjune-2012.pdf)
+
+
+### 2.e. Finally we merge all the data sets into just one. 
+
+
+```{r}
+#merging two of the datasets
+df <- merge(demo_train, LU_train)
+#adding the last dataset
+df <- merge(df,token_train)
+
+```
+
+
+### 2f. Only using clinical measures from Visit 1
+
+We want to look at the clinal measures from Visit 1 specifically. 
+
+
+```{r}
+#creating a new dataset with only the data from the first visit
+df_v1 <- filter(df, VISIT == 1)
+
+# selecting the relevant columns in this new dataframe
+df_v1 <- select(df_v1, SUBJ, VISIT, ADOS, MullenRaw, ExpressiveLangRaw, Socialization)
+
+#renaming columns to indicate it is only for visit 1
+df_v1 = df_v1 %>% 
+  rename("ADOS1" = "ADOS")%>% 
+  rename("MullenRaw1" = "MullenRaw")%>% 
+  rename("ExpressiveLangRaw1" = "ExpressiveLangRaw")%>% 
+  rename("Socialization1" = "Socialization")
+
+#adding these columns to the big dataset
+df <- merge(df, df_v1, by="SUBJ")
+
+```
+
+### 2g. Final touches
+
+Now we want to
+* anonymize our participants (they are real children!). 
+* make sure the variables have sensible values. 
+* Save the data set using into a csv file. Hint: look into write.csv()
+
+```{r}
+#anonymize participants 
+df$SUBJ <- as.factor(df$SUBJ)
+df$SUBJ <- as.numeric(df$SUBJ)
+
+#renaming gender and diagnos values 
+df$Gender <- ifelse(df$Gender == 1, "F","M")
+df$Diagnosis <- ifelse(df$Diagnosis == "A", "ASD","TD")
+
+#saving data 
+
+#write.csv(df, file = "df.csv")
+```
+
+3) BONUS QUESTIONS
+The aim of this last section is to make sure you are fully fluent in the tidyverse.
+Here's the link to a very helpful book, which explains each function:
+http://r4ds.had.co.nz/index.html
+
+1) USING FILTER
+List all kids who:
+1. have a mean length of utterance (across all visits) of more than 2.7 morphemes.
+2. have a mean length of utterance of less than 1.5 morphemes at the first visit
+3. have not completed all trials. Tip: Use pipes to solve this
+
+```{r}
+df1 = df %>% group_by(SUBJ) %>% summarize(mean((CHI_MLU))) %>% filter(df1$`mean(CHI_MLU)` > 2.7)
+
+df2 = df %>% filter(CHI_MLU < 1.5 & VISIT.x == "1")
+
+
+```
+
+
+USING ARRANGE
+
+1. Sort kids to find the kid who produced the most words on the 6th visit
+2. Sort kids to find the kid who produced the least amount of words on the 1st visit..
+
+```{r}
+df3 = df %>% filter(VISIT.x == "6")
+df3$types_CHI = sort(df3$types_CHI, decreasing = TRUE)
+
+```
+
+USING SELECT
+
+1. Make a subset of the data including only kids with ASD, mlu and word tokens
+2. What happens if you include the name of a variable multiple times in a select() call?
+
+```{r}
+df4 = df %>% filter(Diagnosis == "ASD") %>% select(c("CHI_MLU","tokens_CHI", "Diagnosis", "CHI_MLU","Diagnosis"))
+```
+
+
+USING MUTATE, SUMMARISE and PIPES
+1. Add a column to the data set that represents the mean number of words spoken during all visits.
+2. Use the summarise function and pipes to add an column in the data set containing the mean amount of words produced by each trial across all visits. HINT: group by Child.ID 
+3. The solution to task above enables us to assess the average amount of words produced by each child. Why don't we just use these average values to describe the language production of the children? What is the advantage of keeping all the data?
+
+```{r}
+
+
+```

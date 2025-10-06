@@ -1,0 +1,195 @@
+---
+title: "portfolio 1"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(sjPlot)
+library(tidyverse)
+library(broom)
+
+#test
+library(nlme)
+```
+
+
+
+### 1a
+
+```{r}
+#importing the data.
+sleep = read.csv("sleepstudy.csv")
+#selecting the data from subject 308
+p308 = subset(sleep, Subject == 308)
+#making a model with the data from subject 308
+m1 = lm(Reaction ~ Days, data = p308)
+
+summary(m1)
+```
+Days participant 308 was sleep deprived explained a significant proportion of variance in reaction time, R^2 = .64, F(1, 8) = 17.12, p = .003.
+
+
+### 1b
+
+as reported above the model degrees of freedom is 1 and the residual degrees of freedom is 8.
+
+
+### 1c + 1d
+
+```{r}
+dist_f(f=0, deg.f1 = 1, deg.f2 = 8,xmax=20)
+```
+
+### a regression with these degrees of freedom becomes statistically significant when the f-value gets above 5.32 at p<0.05
+
+
+
+## 2
+
+###2a
+
+```{r}
+#getting the coefficients (slope and intercept) for each participant:
+fitted_models = sleep %>% group_by(Subject) %>% do(model = lm(Reaction ~ Days, data = .))
+#putting the data, into a tibble(dataframe)
+m2 = fitted_models %>% tidy(model)
+
+View(m2)
+```
+
+###2b
+```{r}
+#making subject a factor:
+sleep$Subject = as.factor(sleep$Subject)
+#plotting Reaction time as a function of days sleep deprieved with each subject having their own regression line:
+ggplot(sleep, aes(Days, Reaction, colour = Subject))+geom_point()+geom_smooth(method = "lm", se=FALSE)
+```
+
+
+###2c
+
+```{r}
+#puting the degrees of freedom into the dataframe with the regression coefficients
+m2$df_model = 1
+m2$df_residual = 8
+
+View(m2)
+```
+
+
+
+###2d
+
+```{r}
+#we want to look at the effects sleep deprivation has on reaction time therefore we only look at the slopes. The intercepts only show the relationship between the mean reaction time and the reaction time when the participants were 0 days sleep deprived.
+
+m3 = filter(m2, term == "Days")
+
+#we only want those that displayed a statistically significant effect from sleep deprivation:
+m4 = filter(m3, p.value < 0.05)
+
+View(m4)
+```
+
+### 14 individuals displayed a statistically significant effect of sleep deprivation.
+
+
+## 3
+
+### 3a + 3b
+i used an one tailed t-test because we were asked wether the slopes are larger than zero. there is strong theoretical background that the slopes are positive (reationtime increases as days sleep deprived increases). Therefore it is justifyable to use an one-tailed t-test eventhough the risk of comitting a type 1 error is increased. A t-test was used because we want to compare two means (0 and the mean of the reaction time)
+This test assumes normally distributed data, which is tested below with visual inspection and by using the shaprio wilks test. 
+
+```{r}
+#first accessing the slopes from the previous exercise
+est = m3$estimate
+
+estimates = as.data.frame(est)
+
+#testing whether the slopes are normally distributed:
+shapiro.test(est)
+
+ggplot(estimates, aes(est)) + geom_histogram(aes(y=..density..), colour = "black", fill = "white", binwidth = 3) + labs(x ="slope estimates", y = "Density") + stat_function(fun = dnorm, args = list(mean = mean(estimates$est), sd = sd(estimates$est)), colour= "black", size = 1)
+```
+
+As can be seen the data looks kind of normally distributed, and the shapiro wilks test is non-significant indicating that the reaction times are not significantly different from a perfect normal distribution. One can therefore perform the t-test.
+
+```{r}
+test = t.test(est, mu = 0, alternative = "two.sided")
+
+test
+
+r = sqrt(test$statistic^2/((test$statistic^2)+test$parameter))
+r
+
+```
+### 3c
+
+our slopes are shown to be statistically  significantly different from 0 
+t(17)=6.77  p < .001, r = 0.85
+
+### 3d 
+```{r}
+
+ggplot(sleep, aes(x = Days, y = Reaction))+geom_point(stat = "summary", fun.y = mean)+ stat_summary(fun.data = mean_se, geom = "errorbar", color = 'black', width = 0.1)+geom_smooth(method = "lm", alpha=0)
+
+```
+
+
+### Volentary bonus task:
+
+```{r}
+#Adding 10% noise.
+sleep$Reaction2 = sleep$Reaction+sleep$Reaction*runif(10, min = -0.05, max = 0.05)
+```
+
+
+```{r}
+fitted_models1 = sleep %>% group_by(Subject) %>% do(model1 = lm(Reaction2 ~ Days, data = .))
+#putting the data, into a tibble(dataframe)
+m5 = fitted_models1 %>% tidy(model1)
+
+m6 = filter(m5, term == "Days")
+
+#we only want those that displayed a statistically significant effect from sleep deprivation:
+m7 = filter(m6, p.value < 0.05)
+
+View(m7)
+```
+
+
+
+
+
+```{r}
+est1 = m6$estimate
+
+estimates1 = as.data.frame(est1)
+
+#testing whether the slopes are normally distributed:
+shapiro.test(est1)
+
+ggplot(estimates1, aes(est1)) + geom_histogram(aes(y=..density..), colour = "black", fill = "white", binwidth = 1) + labs(x ="slope estimates", y = "Density") + stat_function(fun = dnorm, args = list(mean = mean(estimates1$est1), sd = sd(estimates1$est1)), colour= "black", size = 1)
+```
+
+As can be seen the data looks kind of normally distributed, and the shapiro wilks test is non-significant indicating that the reaction times are not significantly different from a perfect normal distribution. One can therefore perform the t-test.
+
+```{r}
+test1 = t.test(est1, mu = 0, alternative = "two.sided")
+
+test1
+
+r1 = sqrt(test1$statistic^2/((test1$statistic^2)+test1$parameter))
+r1
+```
+
+as can be seen there is only 13 statistically significant slopes after adding 10% white noise.
+
+The results show that adding 10% white noise can have a influence on the individual level, only 13 slopes being statistically significant meaning that one person after adding the 10% noise did not seem to have their reaction time influenced by sleep deprivation, eventhough they seemed to be influenced by sleep deprivation without the 10% noise. 
+On a group level adding the 10% noise had no meaningful effect. 

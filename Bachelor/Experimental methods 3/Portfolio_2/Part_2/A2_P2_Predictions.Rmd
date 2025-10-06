@@ -1,0 +1,239 @@
+---
+title: "Assignment 2 - Language Development in ASD - Making predictions"
+author: "Daniel, Jesper, Pernille KJ and Astrid"
+date: "August 23, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Exercise 1) Testing model performance
+
+How did your models from last time perform? In this exercise you have to compare the results on the training data and on the test data. Report both of them. Compare them. Discuss why they are different.
+
+
+```{r, include = FALSE}
+
+pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret,merTools, tidyverse)
+## Clean up function, included to inspire you
+
+CleanUpData <- function(Demo,LU,Word){
+  
+  Speech <- merge(LU, Word) %>% 
+    rename(
+      Child.ID = SUBJ, 
+      Visit=VISIT) %>%
+    mutate(
+      Visit = as.numeric(str_extract(Visit, "\\d")),
+      Child.ID = gsub("\\.","", Child.ID)
+      ) %>%
+    dplyr::select(
+      Child.ID, Visit, MOT_MLU, CHI_MLU, types_MOT, types_CHI, tokens_MOT, tokens_CHI
+    )
+  
+  Demo <- Demo %>%
+    dplyr::select(
+      Child.ID, Visit, Ethnicity, Diagnosis, Gender, Age, ADOS, MullenRaw, ExpressiveLangRaw, Socialization
+    ) %>%
+    mutate(
+      Child.ID = gsub("\\.","", Child.ID)
+    )
+    
+  Data=merge(Demo,Speech,all=T)
+  
+  Data1= Data %>% 
+     subset(Visit=="1") %>% 
+     dplyr::select(Child.ID, ADOS, ExpressiveLangRaw, MullenRaw, Socialization) %>%
+     rename(Ados1 = ADOS, 
+            verbalIQ1 = ExpressiveLangRaw, 
+            nonVerbalIQ1 = MullenRaw,
+            Socialization1 = Socialization) 
+  
+  Data=merge(Data, Data1, all=T) %>%
+    mutate(
+      Child.ID = as.numeric(as.factor(as.character(Child.ID))),
+      Visit = as.numeric(as.character(Visit)),
+      Gender = recode(Gender, 
+         "1" = "M",
+         "2" = "F"),
+      Diagnosis = recode(Diagnosis,
+         "A"  = "ASD",
+         "B"  = "TD")
+    )
+
+  return(Data)
+}
+
+# Load training Data
+train = read_csv("data_clean.csv")
+train = train %>% drop_na(CHI_MLU)
+
+#- recreate the models you chose last time (just write the code again and apply it to Train Data)
+
+m1 = lmer(CHI_MLU  ~ poly(Visit,2) * Diagnosis +verbalIQ1+ADOS1+(1|Child.ID), data = train)
+
+#- calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
+
+rmse1 = RMSE(fitted(m1), train$CHI_MLU)
+
+#- create the test dataset (apply the code from assignment 1 or my function to clean up the 3 test datasets)
+# Test data
+
+Demo = read_csv("demo_test.csv")
+Word = read_csv("token_test.csv")
+LU = read_csv("LU_test.csv")
+
+# cleaning the data up and merging the files
+test = CleanUpData(Demo, LU, Word)
+
+test$ADOS1 = test$Ados1
+
+#removing na's from the mean length of utterance column 
+test = test %>% drop_na(CHI_MLU)
+
+
+
+#- test the performance of the models on the test data (Tips: google the functions "predict()")
+
+rmse2 = RMSE(predict(m1,test,allow.new.levels = TRUE), test$CHI_MLU)
+
+# a plot showing the observed data compared to the predicted data for the test data
+
+test$predicted_MLU = predict(m1, test, allow.new.levels = TRUE)
+
+ggplot(test, aes(test$predicted_MLU, test$CHI_MLU))+ geom_point()+geom_abline(intercept = 0, slope = 1)+labs(x = "predicted", y = "actual")
+
+#- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval())
+
+op = predictInterval(m1, test)
+op$actual = test$CHI_MLU
+
+
+```
+
+The root mean square of the model on the training data is 0.4. Since the childrens lengths of utterance are generally quite small, this is rmse does not indicate great perfomance of the model on the training data. However it is even higher for the test data (0.65). 
+
+This makes sense, since the model has been built on the training data it more closely follows this data. 
+
+
+### Exercise 2) Model Selection via Cross-validation (N.B: ChildMLU!)
+
+One way to reduce bad surprises when testing a model on new data is to train the model via cross-validation. 
+
+In this exercise you have to use cross-validation to calculate the predictive error of your models and use this predictive error to select the best possible model.
+
+
+```{r}
+test$Child.ID = test$Child.ID+66
+
+#combining all the data. for cross-validation we can use all our data. 
+all = merge(train, test, all = T)
+
+#- Create the basic model of ChildMLU as a function of Time and Diagnosis (don't forget the random effects!).
+m0 = lmer(CHI_MLU ~ Visit * Diagnosis + (1|Child.ID), data = all)
+
+#out model from last time. we removed ADOs from the model because diagnosis and ADOS are highly correlated, since the diagnosis is infered from the ADOS. 
+m1 = lmer(CHI_MLU  ~ poly(Visit,2) * Diagnosis +verbalIQ1 +(1|Child.ID), data = all)
+
+#- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
+#making a model with all the data.
+
+#CV with 6 folds:
+k = 6
+
+# unique(all$Child.ID) keeps the same child in one group (training/test)
+folds = createFolds(unique(all$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+
+
+RMSEtrain0 = rep(NA,k)
+RMSEtest0 = rep(NA,k)
+
+
+i = 1
+
+for (fold in folds){
+  train = subset(all, !(Child.ID %in% fold))
+  test = subset(all, Child.ID %in% fold)
+  model1 = lmer(CHI_MLU ~ Visit * Diagnosis + (1|Child.ID), data = train)
+    test$prediction = predict(model1, test, allow.new.levels = T)
+  train$prediction = fitted(model1)
+  RMSEtrain0[i] = rmse(train$CHI_MLU, fitted(model1))
+  RMSEtest0[i] = rmse(test$CHI_MLU, test$prediction)
+  i = i+1
+}
+
+mean(RMSEtest0)
+
+```
+
+
+```{r}
+
+#- Now try to find the best possible predictive model of ChildMLU, that is, the one that produces the best cross-validated results.
+
+
+RMSEtrain1 = rep(NA,k)
+RMSEtest1 = rep(NA,k)
+
+i = 1
+
+for (fold in folds){
+  train = subset(all, !(Child.ID %in% fold))
+  test = subset(all, Child.ID %in% fold)
+  model1 = lmer(CHI_MLU  ~ poly(Visit,2) * ADOS1 +verbalIQ1 +(1|Child.ID), data = train)
+    test$prediction = predict(model1, test, allow.new.levels = T)
+  train$prediction = fitted(model1)
+  RMSEtrain1[i] = rmse(train$CHI_MLU, fitted(model1))
+  RMSEtest1[i] = rmse(test$CHI_MLU, test$prediction)
+  i = i+1
+}
+
+mean(RMSEtest1)
+```
+
+Report the results and comment on them. 
+
+[answer]
+
+### Exercise 3) Assessing the single child
+
+Let's get to business. This new kiddo - Bernie - has entered your clinic. This child has to be assessed according to his group's average and his expected development.
+
+Bernie is one of the six kids in the test dataset, so make sure to extract that child alone for the following analysis.
+
+You want to evaluate:
+
+- how does the child fare in ChildMLU compared to the average TD child at each visit? Define the distance in terms of absolute difference between this Child and the average TD.
+
+```{r}
+#bernie is the 2nd child in the test data set.
+test = CleanUpData(Demo, LU, Word)
+test = test %>% drop_na(CHI_MLU)
+bernie = test %>% filter(test$Child.ID == 2)
+bernie$ADOS1 = bernie$Ados1
+
+bernieval = bernie %>% group_by(Visit) %>% summarize(meanbernie = mean(CHI_MLU))
+
+
+
+TDval = all %>% filter(all$Child.ID != 68) %>% group_by(Diagnosis, Visit) %>% summarize(TDmean = mean(CHI_MLU)) %>% filter(Diagnosis == "TD")
+
+TDval$meanbernie = bernieval$meanbernie
+
+TDval$abs = abs(TDval$TDmean-TDval$meanbernie)
+```
+
+- how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child)
+
+```{r}
+
+ggplot(bernie, aes(predict(m1, bernie, allow.new.levels = T), CHI_MLU))+geom_point()+geom_abline(slope = 1, intercept = 0)+ labs(x = "predicted", y = "actual")
+
+```
+We made a table showing Bernies MLU at visits 1 through 6 compared to that of the average child. We also included a column showing the abolsute difference between Bernie and the average child. 
+
+Bernie does better than the average child in all visits. 
+We also used our model to predict how well a child with the predispositions of Bernie is expected to do. Bernie did better than our model predicted We can see this in the plot below. The plot compares the predicted perfomance of Berine to his observed (actual) perfomance.

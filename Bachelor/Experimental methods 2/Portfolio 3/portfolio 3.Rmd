@@ -1,0 +1,242 @@
+---
+title: "Portfolio 3"
+author: "Jesper Fischer Ehmsen"
+date: "18/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r}
+##data
+fmri<-as.matrix(read.csv("portfolio_assignment3_aud_fmri_data37.csv", header=FALSE))
+#making it a time-series
+fmri2<-ts(fmri)
+#design
+fmrides<-as.matrix(read.csv("portfolio_assignment3_aud_fmri_design.csv", header=FALSE))
+#making it a time-series
+fmrides2<-ts(fmrides)
+
+
+
+matplot(x = fmri2,
+        type = "l",
+        xlab = "Time",
+        ylab = "Signal",
+        lty = 1)
+
+cor.test(fmrides[,1], fmrides[,2], method = "pearson")
+
+```
+
+```{r}
+
+meld = melt(fmri2, id = c('V1'))
+
+meld %>% group_by(value) %>% mean(meld$value)
+
+ggplot(meld, aes(x = X2, y = value, fill = X2))+geom_boxplot()
+
+matplot(x = fmrides,        
+        type = "l",
+        pch = 19,
+        xlab = "Time",
+        ylab = "Signal")
+
+str(fmrides2)
+
+plot.ts(fmrides)
+
+mean()
+```
+
+
+
+
+
+```{r}
+subset(fmri2, fmri2 == "V3")
+
+```
+
+
+
+```{r}
+
+?findpeaks()
+
+v1 = fmrides[,1]
+
+hej = findpeaks(fmrides[,1])
+
+hej = as.factor(hej[,2])
+
+nrow(hej)
+
+hej1 = as.factor(fmrides[,2])
+
+fm = as.data.frame(fmrides)
+
+library(car)
+
+
+```
+
+
+```{r}
+ggplot(fm, aes())
+
+meld = melt(fm, id = c('V1'))
+
+m1$coefficients
+
+pp = m1$coefficients
+
+m1$coefficients[1:1]
+
+b = pp[0:1]
+
+ggplot(meld, aes(y=value, x= 1:400), color = meld$variable)+geom_point()
+
+mean(fmrides[,2])
+
+```
+
+
+
+
+
+
+```{r}
+one = fmri2[,1]
+
+summary(lm(one ~ fmrides2))
+
+summary(lm(one ~ fmrides2+0))
+
+
+m1 = lm(one ~ fmrides2[,1])
+
+m1ris = m1$residuals
+
+m11 = lm(m1ris ~ fmrides2[,2])
+
+summary(m11)
+
+m2 = lm(one ~ fmrides2[,2])
+
+m2ris = m2$residuals
+
+m22 = lm(m2ris ~ fmrides2[,1])
+
+summary(m22)
+```
+
+
+```{r}
+m4 = lm(fmri2 ~ fmrides2)
+
+hej = m4$coefficients
+
+hej = as.data.frame(hej)
+
+hej = t(hej)
+
+hej$con = hej$fmrides2V1-hej$fmrides2V2
+
+hej = hej[,-1]
+
+t.test(hej[2,], mu = 0, alternative = "two.sided")
+
+t.test(hej[3,], mu = 0, alternative = "two.sided")
+
+con = fmrides[,1]-fmrides[,2]
+
+
+
+m9 = lm(fmri~fmrides)
+
+m10 = lm(qqq ~ fmrides)
+
+
+View(m10$coefficients)
+
+View(m10$coefficients)
+qqq = as.matrix(qqqqq)
+
+View(m9$coefficients)
+View(m4$coefficients)
+
+fmriii = as.data.frame(fmrides)
+
+t.test(con, mu = 0, alternatice = "two.sided")
+
+
+hej = as.data.frame(hej)
+
+hej = t(hej)
+
+
+qq = pivot_longer(hej, c(fmrides2V1,fmrides2V2, con), names_to = "q")
+
+
+
+
+
+
+ggplot(qq, aes(q, value))+geom_bar(position = "dodge", stat = "summary", fun.y = "mean")+geom_errorbar(ymin = qq$value+sd(qq$value)/sqrt(111/3), ymin = qq$value-sd(qq$value/sqrt(111/3)))
+
+
+hej = hej[,-1]
+
+hej = as.data.frame(hej)
+
+mean(hej$fmrides2V1)
+
+View(mtcars)
+
+mean(hej$fmrides2V1)
+
+mean(hej$fmrides2V2)
+
+sd(hej$fmrides2V1)
+
+sd(hej$fmrides2V2)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+qqqqq = bind_cols(fmr,time)
+
+?bind_cols
+
+time = 1:400
+
+time = as.data.frame(time)
+
+fmr = as.data.frame(fmri)
+
+```
+
+

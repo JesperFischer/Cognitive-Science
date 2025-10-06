@@ -1,0 +1,69 @@
+---
+title: "effect size for linear models"
+author: "Jesper Fischer Ehmsen"
+date: "9/9/2020"
+output: html_document
+---
+
+```{r}
+df = read.csv("df.csv")
+```
+
+effect size "r" for a linear model, the whole model can be calculated as:
+
+
+```{r}
+m1 = lm(types_CHI ~ Diagnosis, data = df)
+summary(m1)
+#take R^2 and take the square-root, which gives the effect size for the whole model.
+r = sqrt(0.1105)
+
+#the effect size for our predictor can be calculated from the t-value and DF like this
+
+r1 = sqrt(6.678^2/((6.678^2+350)))
+
+#the two values are basically the same which makes sense because the model only contains that specific predictor.
+
+m2 =lm(types_CHI ~ Diagnosis + VISIT.x, data = df)
+summary(m2)
+
+#the model effect size:
+r2 = sqrt(0.29)
+
+#effect size for diagnosis in m2
+r3 = sqrt(7.541^2/((7.541^2+349)))
+
+#effect size for visit in m2
+r4 = sqrt(9.479^2/((9.479^2+349)))
+
+
+#not the same but close
+```
+
+r = 0.10 indicates a small effect;
+r = 0.30 indicates a medium effect;
+r = 0.50 indicates a large effect.
+
+The better way of doing it with effect sizes for linear models.
+```{r}
+#calculating f^2 as an effect size. see https://www.spss-tutorials.com/effect-size/
+
+#for m1 the effect size becomes:
+f = 0.1105^2/(1-(0.1105)^2)
+
+#effect size for diagnosis in m2:
+#first find the increase in R^2 including diagnosis.
+
+m3 = lm(types_CHI ~ VISIT.x, data = df)
+#find the increase in R^2
+
+rq = 0.2906-0.1773
+#the effect size for diagnosis in m2 is then:
+fd = rq^2/(1-(rq)^2)
+#the effect size for visit in m2 is then:
+rv = 0.2906-0.1105
+fv = rv^2/(1-(rv)^2)
+```
+f2 = 0.02 indicates a small effect;
+f2 = 0.15 indicates a medium effect;
+f2 = 0.35 indicates a large effect.

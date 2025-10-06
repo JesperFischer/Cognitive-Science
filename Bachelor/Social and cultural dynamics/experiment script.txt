@@ -1,0 +1,2668 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+This experiment was created using PsychoPy3 Experiment Builder (v2021.1.4),
+    on May 19, 2021, at 22:36
+If you publish work using this script the most relevant publication is:
+
+    Peirce J, Gray JR, Simpson S, MacAskill M, Höchenberger R, Sogo H, Kastman E, Lindeløv JK. (2019) 
+        PsychoPy2: Experiments in behavior made easy Behav Res 51: 195. 
+        https://doi.org/10.3758/s13428-018-01193-y
+
+"""
+
+from __future__ import absolute_import, division
+
+from psychopy import locale_setup
+from psychopy import prefs
+from psychopy import sound, gui, visual, core, data, event, logging, clock, colors
+from psychopy.constants import (NOT_STARTED, STARTED, PLAYING, PAUSED,
+                                STOPPED, FINISHED, PRESSED, RELEASED, FOREVER)
+
+import numpy as np  # whole numpy lib is available, prepend 'np.'
+from numpy import (sin, cos, tan, log, log10, pi, average,
+                   sqrt, std, deg2rad, rad2deg, linspace, asarray)
+from numpy.random import random, randint, normal, shuffle, choice as randchoice
+import os  # handy system and path functions
+import sys  # to get file system encoding
+
+from psychopy.hardware import keyboard
+
+
+
+# Ensure that relative paths start from the same directory as this script
+_thisDir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(_thisDir)
+
+# Store info about the experiment session
+psychopyVersion = '2021.1.4'
+expName = 'trying to work online'  # from the Builder filename that created this script
+expInfo = {'participant': '10'}
+dlg = gui.DlgFromDict(dictionary=expInfo, sortKeys=False, title=expName)
+if dlg.OK == False:
+    core.quit()  # user pressed cancel
+expInfo['date'] = data.getDateStr()  # add a simple timestamp
+expInfo['expName'] = expName
+expInfo['psychopyVersion'] = psychopyVersion
+
+# Data file name stem = absolute path + name; later add .psyexp, .csv, .log, etc
+filename = _thisDir + os.sep + u'data/%s_%s_%s' % (expInfo['participant'], expName, expInfo['date'])
+
+# An ExperimentHandler isn't essential but helps with data saving
+thisExp = data.ExperimentHandler(name=expName, version='',
+    extraInfo=expInfo, runtimeInfo=None,
+    originPath='C:\\Users\\Jespe\\Downloads\\social and cultural experiment\\social and cultural dynamics experiment.py',
+    savePickle=True, saveWideText=True,
+    dataFileName=filename)
+# save a log file for detail verbose info
+logFile = logging.LogFile(filename+'.log', level=logging.EXP)
+logging.console.setLevel(logging.WARNING)  # this outputs to the screen, not a file
+
+endExpNow = False  # flag for 'escape' or other condition => quit the exp
+frameTolerance = 0.001  # how close to onset before 'same' frame
+
+# Start Code - component code to be run after the window creation
+
+# Setup the Window
+win = visual.Window(
+    size=[1463, 823], fullscr=True, screen=0, 
+    winType='pyglet', allowGUI=False, allowStencil=False,
+    monitor='testMonitor', color=[0,0,0], colorSpace='rgb',
+    blendMode='avg', useFBO=True, 
+    units='height')
+# store frame rate of monitor if we can measure it
+expInfo['frameRate'] = win.getActualFrameRate()
+if expInfo['frameRate'] != None:
+    frameDur = 1.0 / round(expInfo['frameRate'])
+else:
+    frameDur = 1.0 / 60.0  # could not measure, so guess
+
+# create a default keyboard (e.g. to check for escape)
+defaultKeyboard = keyboard.Keyboard()
+
+# Initialize components for Routine "intro"
+introClock = core.Clock()
+import random
+p = ""
+dok_c = p+"1_c.mp4"
+dok_n = p+"1_n.mp4"
+dok_p = p+"1_p.mp4"
+dok1_c = p+"2_c.mp4"
+
+spm1 = ["Hvor mange gange ser og hører man                                                             at spætten hakker i træet?", " Hvor mange % skov var der tilbage                                                                          i starten af 1800-tallet?", "Hvor mange gange siger taleren træer", "Hvor mange klip af træer der falder,                                                              bliver der vist?"]
+spm2 = ["Hvor mange myrer er der i myretuen?                                                                                     (svar i hundrede-tusinde)", "Hvor mange gange bliver der vist et billede af en svamp?", "Hvor mange forskellige slags insekter                                                            bliver der vist?", "Hvor mange gange referere taleren til en sæson?"]
+spm3 = ["Hvor mange baner var der i alt på de to rutchebaner?", "Hvor mange procent skov er der på jorden i dag?", "Forlystelsesparken lukkede i år                                                                         svar som to-tusind-og (10 = 2010)", "Hvor mange prikker havde mariehønen?"]
+
+textdok = ["Jeg følte mig underholdt af at se videoen","Hvor lang tid tror du tror du at videoen varede?                                                          svar i sekunder?", "Det gav mig glæde at se videoen","Det var sjovt, at se videoen"]
+
+
+list = [["1_c.mp4","1_n.mp4","1_p.mp4"],["2_c.mp4","2_n.mp4", "2_p.mp4"],["3_c.mp4","3_n.mp4","3_p.mp4"]]
+random.shuffle(list)
+
+tal = [0,1,2]
+random.shuffle(tal)
+
+labels1 = ["20"]
+labels2 = ["20"]
+labels3 = ["20"]
+
+if tal[0] == 0:
+    tal1 = 0
+    
+elif tal[0] == 1:
+    tal1 = 1
+else:
+    tal1 = 2
+
+if tal[1] == 0:
+    tal2 = 0
+elif tal[1] == 1:
+    tal2 = 1
+else:
+    tal2 = 2
+
+if tal[2] == 0:
+    tal3 = 0
+elif tal[2] == 1:
+    tal3 = 1
+else:
+    tal3 = 2
+
+file = list[0][tal1]
+file1 =list[1][tal2]
+file2 = list[2][tal3]
+
+if file[0] == "1":
+    text1 = spm1
+    display1 = labels1
+elif file[0] == "2":
+    text1 = spm2
+    display1 = labels2
+elif file[0] =="3":
+    text1 = spm3
+    display1 = labels3
+
+
+if file1[0] == "1":
+    text2 = spm1
+    display2 = labels1
+elif file1[0] == "2":
+    text2 = spm2
+    display2 = labels2
+elif file1[0] =="3":
+    text2 = spm3
+    display2 = labels3
+
+
+if file2[0] == "1":
+    text3 = spm1
+    display3 = labels1
+elif file2[0] == "2":
+    text3 = spm2
+    display3 = labels2
+elif file2[0] =="3":
+    text3 = spm3
+    display3 = labels3
+
+thisExp.addData('video1', file)
+thisExp.addData('video2', file1)
+thisExp.addData('video3', file2)
+
+text_10 = visual.TextStim(win=win, name='text_10',
+    text='Velkommen til dette eksperiment.\nDu vil snarest bliver præsenteret for tre videoer, videoerne er blevet vist til et online undervisningsforløb for tre forskellige skoleklasse på platformen ‘ZOOM’. Du vil kun se et kort udklip fra undervisningsgangene. Videoerne er med lyd på.\n\nEfter hver video vil du (så godt som du kan) skulle svare på nogle spørgsmål angående videoen. Spørgsmålene kan både være relateret til noget du ser og hører.\nEksperimentet tager mellem 5 og 15 minutter. \n\nTryk på ‘mellemrumstasten’ for at se første video.\n',
+    font='Arial',
+    pos=(0, 0), height=0.04, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-1.0);
+key = keyboard.Keyboard()
+
+# Initialize components for Routine "etik"
+etikClock = core.Clock()
+text_etik = visual.TextStim(win=win, name='text_etik',
+    text='For at fortsætte, skal du godkende at vi må bruge dit data til vores eksamen i social and cultural dynamics. Dataen lige efter indsamling vil blive annoymiseret, og det vil derfor ikke være muligt at genkende dit data.\n\nKlik mellemrum for at fortsætte',
+    font='Arial',
+    pos=(0, 0), height=0.05, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=0.0);
+key_etik = keyboard.Keyboard()
+
+# Initialize components for Routine "klargørelse"
+klargørelseClock = core.Clock()
+text_klargørelse = visual.TextStim(win=win, name='text_klargørelse',
+    text='Næste gang du går videre starter eksperimentet, her vil du som sagt blive presenteret med en video du skal se. Efterfølgende vil der komme et par spørgsmål som du skal svare på, når du har svaret på spørgsmålene med musen skal du bare klikke mellemrum for at fortsætte. Du vil til enhver tid kunne klikke på escape-knappen, for afbryde experimentet.\n\nKlik mellemrum for at begynde experimentet.',
+    font='Arial',
+    pos=(0, 0), height=0.05, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=0.0);
+key_klargørelse = keyboard.Keyboard()
+
+# Initialize components for Routine "stim"
+stimClock = core.Clock()
+movie = visual.MovieStim3(
+    win=win, name='movie',
+    noAudio = False,
+    filename=file,
+    ori=0, pos=(0, 0), opacity=1,
+    loop=False,
+    depth=0.0,
+    )
+
+# Initialize components for Routine "question"
+questionClock = core.Clock()
+slider = visual.Slider(win=win, name='slider',
+    size=(0.5, 0.05), pos=(0.44, 0.3), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=0, readOnly=False)
+jeg_følte1 = visual.Slider(win=win, name='jeg_følte1',
+    size=(0.5, 0.05), pos=(0.44, 0.1), units='height',
+    labels=("meget uenig", "meget enig"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-1, readOnly=False)
+slider3 = visual.Slider(win=win, name='slider3',
+    size=(0.5, 0.05), pos=(0.44, -0.1), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.05,
+    flip=False, depth=-2, readOnly=False)
+tid1 = visual.Slider(win=win, name='tid1',
+    size=(0.5, 0.05), pos=(0.44, -0.3), units='height',
+    labels=("140","150","160","170","180","190","200"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-3, readOnly=False)
+det_gav1 = visual.Slider(win=win, name='det_gav1',
+    size=(0.5, 0.05), pos=(-0.44, 0.3), units='height',
+    labels=("meget uenig", "meget enig"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-4, readOnly=False)
+slider6 = visual.Slider(win=win, name='slider6',
+    size=(0.5, 0.05), pos=(-0.44, 0.1), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.05,
+    flip=False, depth=-5, readOnly=False)
+det_var1 = visual.Slider(win=win, name='det_var1',
+    size=(0.5, 0.05), pos=(-0.44, -0.1), units='height',
+    labels=("meget uenig", "meget enig"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-6, readOnly=False)
+slider8 = visual.Slider(win=win, name='slider8',
+    size=(0.5, 0.05), pos=(-0.44, -0.3), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.05,
+    flip=False, depth=-7, readOnly=False)
+key_resp = keyboard.Keyboard()
+text_1 = visual.TextStim(win=win, name='text_1',
+    text=text1[0],
+    font='Arial',
+    units='height', pos=(0.42, 0.38), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-10.0);
+text_2 = visual.TextStim(win=win, name='text_2',
+    text=textdok[0],
+    font='Arial',
+    units='height', pos=(0.44, 0.18), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-11.0);
+text_3 = visual.TextStim(win=win, name='text_3',
+    text=text1[2],
+    font='Arial',
+    units='height', pos=(0.44, -0.02), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-12.0);
+text4 = visual.TextStim(win=win, name='text4',
+    text=textdok[1],
+    font='Arial',
+    units='height', pos=(0.42, -0.22), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-13.0);
+text5 = visual.TextStim(win=win, name='text5',
+    text=textdok[2],
+    font='Arial',
+    units='height', pos=(-0.44, 0.38), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-14.0);
+text6 = visual.TextStim(win=win, name='text6',
+    text=text1[1],
+    font='Arial',
+    units='height', pos=(-0.42, 0.18), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-15.0);
+text7 = visual.TextStim(win=win, name='text7',
+    text=textdok[3],
+    font='Arial',
+    units='height', pos=(-0.44, -0.02), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-16.0);
+text8 = visual.TextStim(win=win, name='text8',
+    text=text1[3],
+    font='Arial',
+    units='height', pos=(-0.42, -0.22), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-17.0);
+labels = visual.TextStim(win=win, name='labels',
+    text=display1[0],
+    font='Arial',
+    pos=(0.69, 0.25), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-18.0);
+labels_2 = visual.TextStim(win=win, name='labels_2',
+    text='0',
+    font='Arial',
+    pos=(0.19, 0.25), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-19.0);
+labels_3 = visual.TextStim(win=win, name='labels_3',
+    text='0',
+    font='Arial',
+    pos=(0.19, -0.15), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-20.0);
+labels_4 = visual.TextStim(win=win, name='labels_4',
+    text=display1[0],
+    font='Arial',
+    pos=(0.69, -0.15), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-21.0);
+labels_5 = visual.TextStim(win=win, name='labels_5',
+    text=display1[0],
+    font='Arial',
+    pos=(-0.19, 0.05), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-22.0);
+labels_6 = visual.TextStim(win=win, name='labels_6',
+    text='0',
+    font='Arial',
+    pos=(-0.69, 0.05), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-23.0);
+labels_7 = visual.TextStim(win=win, name='labels_7',
+    text=display1[0],
+    font='Arial',
+    pos=(-0.19, -0.35), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-24.0);
+labels_8 = visual.TextStim(win=win, name='labels_8',
+    text='0',
+    font='Arial',
+    pos=(-0.69, -0.35), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-25.0);
+klik_mellemrum = visual.TextStim(win=win, name='klik_mellemrum',
+    text='tryk på mellemrum for at fortsætte, når du har svaret på alle spørgsmål',
+    font='Open Sans',
+    pos=(0, -0.42), height=0.02, wrapWidth=None, ori=0.0, 
+    color='white', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-26.0);
+
+# Initialize components for Routine "stim1"
+stim1Clock = core.Clock()
+movie_2 = visual.MovieStim3(
+    win=win, name='movie_2',
+    noAudio = False,
+    filename=file1,
+    ori=0, pos=(0, 0), opacity=1,
+    loop=False,
+    depth=0.0,
+    )
+
+# Initialize components for Routine "question2"
+question2Clock = core.Clock()
+slider1_1 = visual.Slider(win=win, name='slider1_1',
+    size=(0.5, 0.05), pos=(0.44, 0.3), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=0, readOnly=False)
+jeg_følte2 = visual.Slider(win=win, name='jeg_følte2',
+    size=(0.5, 0.05), pos=(0.44, 0.1), units='height',
+    labels=("meget uenig", "meget enig"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-1, readOnly=False)
+slider3_1 = visual.Slider(win=win, name='slider3_1',
+    size=(0.5, 0.05), pos=(0.44, -0.1), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-2, readOnly=False)
+tid2 = visual.Slider(win=win, name='tid2',
+    size=(0.5, 0.05), pos=(0.44, -0.3), units='height',
+    labels=("140","150","160","170","180","190","200"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-3, readOnly=False)
+det_gav2 = visual.Slider(win=win, name='det_gav2',
+    size=(0.5, 0.05), pos=(-0.44, 0.3), units='height',
+    labels=("meget uenig", "meget enig"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-4, readOnly=False)
+slider6_1 = visual.Slider(win=win, name='slider6_1',
+    size=(0.5, 0.05), pos=(-0.44, 0.1), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-5, readOnly=False)
+det_var2 = visual.Slider(win=win, name='det_var2',
+    size=(0.5, 0.05), pos=(-0.44, -0.1), units='height',
+    labels=("meget uenig", "meget enig"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-6, readOnly=False)
+slider8_1 = visual.Slider(win=win, name='slider8_1',
+    size=(0.5, 0.05), pos=(-0.44, -0.3), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-7, readOnly=False)
+key_resp_1 = keyboard.Keyboard()
+text_1_1 = visual.TextStim(win=win, name='text_1_1',
+    text=text2[0],
+    font='Arial',
+    units='height', pos=(0.44, 0.38), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-10.0);
+text2_1 = visual.TextStim(win=win, name='text2_1',
+    text=textdok[0],
+    font='Arial',
+    units='height', pos=(0.44, 0.18), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-11.0);
+text3_1 = visual.TextStim(win=win, name='text3_1',
+    text=text2[1],
+    font='Arial',
+    units='height', pos=(0.44, -0.02), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-12.0);
+text4_1 = visual.TextStim(win=win, name='text4_1',
+    text=textdok[1],
+    font='Arial',
+    units='height', pos=(0.44, -0.22), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-13.0);
+text5_1 = visual.TextStim(win=win, name='text5_1',
+    text=textdok[2],
+    font='Arial',
+    units='height', pos=(-0.44, 0.38), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-14.0);
+text6_1 = visual.TextStim(win=win, name='text6_1',
+    text=text2[2],
+    font='Arial',
+    units='height', pos=(-0.44, 0.18), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-15.0);
+text7_1 = visual.TextStim(win=win, name='text7_1',
+    text=textdok[3],
+    font='Arial',
+    units='height', pos=(-0.44, -0.02), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-16.0);
+text8_1 = visual.TextStim(win=win, name='text8_1',
+    text=text2[3],
+    font='Arial',
+    units='height', pos=(-0.44, -0.22), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-17.0);
+labels2_1 = visual.TextStim(win=win, name='labels2_1',
+    text=display2[0],
+    font='Arial',
+    pos=(0.69, 0.25), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-18.0);
+labels2_2 = visual.TextStim(win=win, name='labels2_2',
+    text='0',
+    font='Arial',
+    pos=(0.19, 0.25), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-19.0);
+labels2_3 = visual.TextStim(win=win, name='labels2_3',
+    text='0',
+    font='Arial',
+    pos=(0.19, -0.15), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-20.0);
+labels2_4 = visual.TextStim(win=win, name='labels2_4',
+    text=display2[0],
+    font='Arial',
+    pos=(0.69, -0.15), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-21.0);
+labels2_5 = visual.TextStim(win=win, name='labels2_5',
+    text=display2[0],
+    font='Arial',
+    pos=(-0.19, 0.05), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-22.0);
+labels2_6 = visual.TextStim(win=win, name='labels2_6',
+    text='0',
+    font='Arial',
+    pos=(-0.69, 0.05), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-23.0);
+labels2_7 = visual.TextStim(win=win, name='labels2_7',
+    text=display2[0],
+    font='Arial',
+    pos=(-0.19, -0.35), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-24.0);
+labels2_8 = visual.TextStim(win=win, name='labels2_8',
+    text='0',
+    font='Arial',
+    pos=(-0.69, -0.35), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-25.0);
+klik_mellemrum_2 = visual.TextStim(win=win, name='klik_mellemrum_2',
+    text='tryk på mellemrum for at fortsætte, når du har svaret på alle spørgsmål',
+    font='Open Sans',
+    pos=(0, -0.42), height=0.02, wrapWidth=None, ori=0.0, 
+    color='white', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-26.0);
+
+# Initialize components for Routine "stim2"
+stim2Clock = core.Clock()
+movie_3 = visual.MovieStim3(
+    win=win, name='movie_3',
+    noAudio = False,
+    filename=file2,
+    ori=0, pos=(0, 0), opacity=1,
+    loop=False,
+    depth=0.0,
+    )
+
+# Initialize components for Routine "question3"
+question3Clock = core.Clock()
+slider1_2 = visual.Slider(win=win, name='slider1_2',
+    size=(0.5, 0.05), pos=(0.44, 0.3), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=0, readOnly=False)
+jeg_følte3 = visual.Slider(win=win, name='jeg_følte3',
+    size=(0.5, 0.05), pos=(0.44, 0.1), units='height',
+    labels=("meget uenig", "meget enig"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-1, readOnly=False)
+slider3_2 = visual.Slider(win=win, name='slider3_2',
+    size=(0.5, 0.05), pos=(0.44, -0.1), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-2, readOnly=False)
+tid3 = visual.Slider(win=win, name='tid3',
+    size=(0.5, 0.05), pos=(0.44, -0.3), units='height',
+    labels=("140","150","160","170","180","190","200"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-3, readOnly=False)
+det_gav3 = visual.Slider(win=win, name='det_gav3',
+    size=(0.5, 0.05), pos=(-0.44, 0.3), units='height',
+    labels=("meget uenig",  "meget enig"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-4, readOnly=False)
+slider6_2 = visual.Slider(win=win, name='slider6_2',
+    size=(0.5, 0.05), pos=(-0.44, 0.1), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-5, readOnly=False)
+det_var3 = visual.Slider(win=win, name='det_var3',
+    size=(0.5, 0.05), pos=(-0.44, -0.1), units='height',
+    labels=("meget uenig", "meget enig"), ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-6, readOnly=False)
+slider8_2 = visual.Slider(win=win, name='slider8_2',
+    size=(0.5, 0.05), pos=(-0.44, -0.3), units='height',
+    labels=None, ticks=(1, 2, 3, 4, 5, 6, 7), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.03,
+    flip=False, depth=-7, readOnly=False)
+key_resp_2 = keyboard.Keyboard()
+text_1_2 = visual.TextStim(win=win, name='text_1_2',
+    text=text3[0],
+    font='Arial',
+    units='height', pos=(0.44, 0.38), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-10.0);
+text2_2 = visual.TextStim(win=win, name='text2_2',
+    text=textdok[0],
+    font='Arial',
+    units='height', pos=(0.44, 0.18), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-11.0);
+text3_2 = visual.TextStim(win=win, name='text3_2',
+    text=text3[1],
+    font='Arial',
+    units='height', pos=(0.44, -0.02), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-12.0);
+text4_2 = visual.TextStim(win=win, name='text4_2',
+    text=textdok[1],
+    font='Arial',
+    units='height', pos=(0.44, -0.22), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-13.0);
+text5_2 = visual.TextStim(win=win, name='text5_2',
+    text=textdok[2],
+    font='Arial',
+    units='height', pos=(-0.44, 0.38), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-14.0);
+text6_2 = visual.TextStim(win=win, name='text6_2',
+    text=text3[2],
+    font='Arial',
+    units='height', pos=(-0.44, 0.18), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-15.0);
+text7_2 = visual.TextStim(win=win, name='text7_2',
+    text=textdok[3],
+    font='Arial',
+    units='height', pos=(-0.44, -0.02), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-16.0);
+text8_2 = visual.TextStim(win=win, name='text8_2',
+    text=text3[3],
+    font='Arial',
+    units='height', pos=(-0.44, -0.22), height=0.03, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-17.0);
+labels3_1 = visual.TextStim(win=win, name='labels3_1',
+    text=display3[0],
+    font='Arial',
+    pos=(0.69, 0.25), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-18.0);
+labels3_2 = visual.TextStim(win=win, name='labels3_2',
+    text='0',
+    font='Arial',
+    pos=(0.19, 0.25), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-19.0);
+labels3_3 = visual.TextStim(win=win, name='labels3_3',
+    text='0',
+    font='Arial',
+    pos=(0.19, -0.15), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-20.0);
+labels3_4 = visual.TextStim(win=win, name='labels3_4',
+    text=display3[0],
+    font='Arial',
+    pos=(0.69, -0.15), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-21.0);
+labels3_5 = visual.TextStim(win=win, name='labels3_5',
+    text=display3[0],
+    font='Arial',
+    pos=(-0.19, 0.05), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-22.0);
+labels3_6 = visual.TextStim(win=win, name='labels3_6',
+    text='0',
+    font='Arial',
+    pos=(-0.69, 0.05), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-23.0);
+labels3_7 = visual.TextStim(win=win, name='labels3_7',
+    text=display3[0],
+    font='Arial',
+    pos=(-0.19, -0.35), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-24.0);
+labels3_8 = visual.TextStim(win=win, name='labels3_8',
+    text='0',
+    font='Arial',
+    pos=(-0.69, -0.35), height=0.03, wrapWidth=None, ori=0.0, 
+    color='lightgrey', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-25.0);
+klik_mellemrum_3 = visual.TextStim(win=win, name='klik_mellemrum_3',
+    text='tryk på mellemrum for at fortsætte, når du har svaret på alle spørgsmål',
+    font='Open Sans',
+    pos=(0, -0.42), height=0.02, wrapWidth=None, ori=0.0, 
+    color='white', colorSpace='rgb', opacity=1.0, 
+    languageStyle='LTR',
+    depth=-26.0);
+
+# Initialize components for Routine "ending_question"
+ending_questionClock = core.Clock()
+slider_chat = visual.Slider(win=win, name='slider_chat',
+    size=(1.2, 0.10), pos=(0,0), units='height',
+    labels=("slet ikke", "meget"), ticks=(1, 2, 3, 4, 5, 6, 7,8,9,10), granularity=0,
+    style=['rating'], styleTweaks=(), opacity=1,
+    color='LightGray', fillColor='Red', borderColor='White', colorSpace='rgb',
+    font='HelveticaBold', labelHeight=0.05,
+    flip=False, depth=0, readOnly=False)
+key_question = keyboard.Keyboard()
+tekst_question = visual.TextStim(win=win, name='tekst_question',
+    text='hvor meget lå du mærke til chat-boksen i videoerne?',
+    font='Arial',
+    units='height', pos=(0,0.20), height=0.05, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=-3.0);
+
+# Initialize components for Routine "ending"
+endingClock = core.Clock()
+ending_text = visual.TextStim(win=win, name='ending_text',
+    text='Tak fordi du deltog i vores eksperiment.',
+    font='Arial',
+    pos=(0, 0), height=0.05, wrapWidth=None, ori=0, 
+    color='white', colorSpace='rgb', opacity=1, 
+    languageStyle='LTR',
+    depth=0.0);
+key_ending = keyboard.Keyboard()
+
+# Create some handy timers
+globalClock = core.Clock()  # to track the time since experiment started
+routineTimer = core.CountdownTimer()  # to track time remaining of each (non-slip) routine 
+
+# ------Prepare to start Routine "intro"-------
+continueRoutine = True
+# update component parameters for each repeat
+key.keys = []
+key.rt = []
+_key_allKeys = []
+if key.keys == "space":
+    continueRoutine = False
+# keep track of which components have finished
+introComponents = [text_10, key]
+for thisComponent in introComponents:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+introClock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "intro"-------
+while continueRoutine:
+    # get current time
+    t = introClock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=introClock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *text_10* updates
+    if text_10.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text_10.frameNStart = frameN  # exact frame index
+        text_10.tStart = t  # local t and not account for scr refresh
+        text_10.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text_10, 'tStartRefresh')  # time at next scr refresh
+        text_10.setAutoDraw(True)
+    
+    # *key* updates
+    waitOnFlip = False
+    if key.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        key.frameNStart = frameN  # exact frame index
+        key.tStart = t  # local t and not account for scr refresh
+        key.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(key, 'tStartRefresh')  # time at next scr refresh
+        key.status = STARTED
+        # keyboard checking is just starting
+        waitOnFlip = True
+        win.callOnFlip(key.clock.reset)  # t=0 on next screen flip
+        win.callOnFlip(key.clearEvents, eventType='keyboard')  # clear events on next screen flip
+    if key.status == STARTED and not waitOnFlip:
+        theseKeys = key.getKeys(keyList=['space'], waitRelease=False)
+        _key_allKeys.extend(theseKeys)
+        if len(_key_allKeys):
+            key.keys = _key_allKeys[-1].name  # just the last key pressed
+            key.rt = _key_allKeys[-1].rt
+            # a response ends the routine
+            continueRoutine = False
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in introComponents:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "intro"-------
+for thisComponent in introComponents:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+thisExp.addData('text_10.started', text_10.tStartRefresh)
+thisExp.addData('text_10.stopped', text_10.tStopRefresh)
+# check responses
+if key.keys in ['', [], None]:  # No response was made
+    key.keys = None
+thisExp.addData('key.keys',key.keys)
+if key.keys != None:  # we had a response
+    thisExp.addData('key.rt', key.rt)
+thisExp.addData('key.started', key.tStartRefresh)
+thisExp.addData('key.stopped', key.tStopRefresh)
+thisExp.nextEntry()
+# the Routine "intro" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "etik"-------
+continueRoutine = True
+# update component parameters for each repeat
+key_etik.keys = []
+key_etik.rt = []
+_key_etik_allKeys = []
+if key_etik.keys == "space":
+    continueRoutine = False
+
+# keep track of which components have finished
+etikComponents = [text_etik, key_etik]
+for thisComponent in etikComponents:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+etikClock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "etik"-------
+while continueRoutine:
+    # get current time
+    t = etikClock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=etikClock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *text_etik* updates
+    if text_etik.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text_etik.frameNStart = frameN  # exact frame index
+        text_etik.tStart = t  # local t and not account for scr refresh
+        text_etik.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text_etik, 'tStartRefresh')  # time at next scr refresh
+        text_etik.setAutoDraw(True)
+    
+    # *key_etik* updates
+    waitOnFlip = False
+    if key_etik.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        key_etik.frameNStart = frameN  # exact frame index
+        key_etik.tStart = t  # local t and not account for scr refresh
+        key_etik.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(key_etik, 'tStartRefresh')  # time at next scr refresh
+        key_etik.status = STARTED
+        # keyboard checking is just starting
+        waitOnFlip = True
+        win.callOnFlip(key_etik.clock.reset)  # t=0 on next screen flip
+        win.callOnFlip(key_etik.clearEvents, eventType='keyboard')  # clear events on next screen flip
+    if key_etik.status == STARTED and not waitOnFlip:
+        theseKeys = key_etik.getKeys(keyList=['space'], waitRelease=False)
+        _key_etik_allKeys.extend(theseKeys)
+        if len(_key_etik_allKeys):
+            key_etik.keys = _key_etik_allKeys[-1].name  # just the last key pressed
+            key_etik.rt = _key_etik_allKeys[-1].rt
+            # a response ends the routine
+            continueRoutine = False
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in etikComponents:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "etik"-------
+for thisComponent in etikComponents:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+thisExp.addData('text_etik.started', text_etik.tStartRefresh)
+thisExp.addData('text_etik.stopped', text_etik.tStopRefresh)
+# check responses
+if key_etik.keys in ['', [], None]:  # No response was made
+    key_etik.keys = None
+thisExp.addData('key_etik.keys',key_etik.keys)
+if key_etik.keys != None:  # we had a response
+    thisExp.addData('key_etik.rt', key_etik.rt)
+thisExp.addData('key_etik.started', key_etik.tStartRefresh)
+thisExp.addData('key_etik.stopped', key_etik.tStopRefresh)
+thisExp.nextEntry()
+# the Routine "etik" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "klargørelse"-------
+continueRoutine = True
+# update component parameters for each repeat
+key_klargørelse.keys = []
+key_klargørelse.rt = []
+_key_klargørelse_allKeys = []
+if key_klargørelse.keys == "space":
+    continueRoutine = False
+
+# keep track of which components have finished
+klargørelseComponents = [text_klargørelse, key_klargørelse]
+for thisComponent in klargørelseComponents:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+klargørelseClock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "klargørelse"-------
+while continueRoutine:
+    # get current time
+    t = klargørelseClock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=klargørelseClock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *text_klargørelse* updates
+    if text_klargørelse.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text_klargørelse.frameNStart = frameN  # exact frame index
+        text_klargørelse.tStart = t  # local t and not account for scr refresh
+        text_klargørelse.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text_klargørelse, 'tStartRefresh')  # time at next scr refresh
+        text_klargørelse.setAutoDraw(True)
+    
+    # *key_klargørelse* updates
+    waitOnFlip = False
+    if key_klargørelse.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        key_klargørelse.frameNStart = frameN  # exact frame index
+        key_klargørelse.tStart = t  # local t and not account for scr refresh
+        key_klargørelse.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(key_klargørelse, 'tStartRefresh')  # time at next scr refresh
+        key_klargørelse.status = STARTED
+        # keyboard checking is just starting
+        waitOnFlip = True
+        win.callOnFlip(key_klargørelse.clock.reset)  # t=0 on next screen flip
+        win.callOnFlip(key_klargørelse.clearEvents, eventType='keyboard')  # clear events on next screen flip
+    if key_klargørelse.status == STARTED and not waitOnFlip:
+        theseKeys = key_klargørelse.getKeys(keyList=['space'], waitRelease=False)
+        _key_klargørelse_allKeys.extend(theseKeys)
+        if len(_key_klargørelse_allKeys):
+            key_klargørelse.keys = _key_klargørelse_allKeys[-1].name  # just the last key pressed
+            key_klargørelse.rt = _key_klargørelse_allKeys[-1].rt
+            # a response ends the routine
+            continueRoutine = False
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in klargørelseComponents:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "klargørelse"-------
+for thisComponent in klargørelseComponents:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+thisExp.addData('text_klargørelse.started', text_klargørelse.tStartRefresh)
+thisExp.addData('text_klargørelse.stopped', text_klargørelse.tStopRefresh)
+# check responses
+if key_klargørelse.keys in ['', [], None]:  # No response was made
+    key_klargørelse.keys = None
+thisExp.addData('key_klargørelse.keys',key_klargørelse.keys)
+if key_klargørelse.keys != None:  # we had a response
+    thisExp.addData('key_klargørelse.rt', key_klargørelse.rt)
+thisExp.addData('key_klargørelse.started', key_klargørelse.tStartRefresh)
+thisExp.addData('key_klargørelse.stopped', key_klargørelse.tStopRefresh)
+thisExp.nextEntry()
+# the Routine "klargørelse" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "stim"-------
+continueRoutine = True
+# update component parameters for each repeat
+# keep track of which components have finished
+stimComponents = [movie]
+for thisComponent in stimComponents:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+stimClock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "stim"-------
+while continueRoutine:
+    # get current time
+    t = stimClock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=stimClock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *movie* updates
+    if movie.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        movie.frameNStart = frameN  # exact frame index
+        movie.tStart = t  # local t and not account for scr refresh
+        movie.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(movie, 'tStartRefresh')  # time at next scr refresh
+        movie.setAutoDraw(True)
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in stimComponents:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "stim"-------
+for thisComponent in stimComponents:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+movie.stop()
+# the Routine "stim" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "question"-------
+continueRoutine = True
+# update component parameters for each repeat
+slider.reset()
+jeg_følte1.reset()
+slider3.reset()
+tid1.reset()
+det_gav1.reset()
+slider6.reset()
+det_var1.reset()
+slider8.reset()
+key_resp.keys = []
+key_resp.rt = []
+_key_resp_allKeys = []
+# keep track of which components have finished
+questionComponents = [slider, jeg_følte1, slider3, tid1, det_gav1, slider6, det_var1, slider8, key_resp, text_1, text_2, text_3, text4, text5, text6, text7, text8, labels, labels_2, labels_3, labels_4, labels_5, labels_6, labels_7, labels_8, klik_mellemrum]
+for thisComponent in questionComponents:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+questionClock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "question"-------
+while continueRoutine:
+    # get current time
+    t = questionClock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=questionClock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *slider* updates
+    if slider.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider.frameNStart = frameN  # exact frame index
+        slider.tStart = t  # local t and not account for scr refresh
+        slider.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider, 'tStartRefresh')  # time at next scr refresh
+        slider.setAutoDraw(True)
+    
+    # *jeg_følte1* updates
+    if jeg_følte1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        jeg_følte1.frameNStart = frameN  # exact frame index
+        jeg_følte1.tStart = t  # local t and not account for scr refresh
+        jeg_følte1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(jeg_følte1, 'tStartRefresh')  # time at next scr refresh
+        jeg_følte1.setAutoDraw(True)
+    
+    # *slider3* updates
+    if slider3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider3.frameNStart = frameN  # exact frame index
+        slider3.tStart = t  # local t and not account for scr refresh
+        slider3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider3, 'tStartRefresh')  # time at next scr refresh
+        slider3.setAutoDraw(True)
+    
+    # *tid1* updates
+    if tid1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        tid1.frameNStart = frameN  # exact frame index
+        tid1.tStart = t  # local t and not account for scr refresh
+        tid1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(tid1, 'tStartRefresh')  # time at next scr refresh
+        tid1.setAutoDraw(True)
+    
+    # *det_gav1* updates
+    if det_gav1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        det_gav1.frameNStart = frameN  # exact frame index
+        det_gav1.tStart = t  # local t and not account for scr refresh
+        det_gav1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(det_gav1, 'tStartRefresh')  # time at next scr refresh
+        det_gav1.setAutoDraw(True)
+    
+    # *slider6* updates
+    if slider6.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider6.frameNStart = frameN  # exact frame index
+        slider6.tStart = t  # local t and not account for scr refresh
+        slider6.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider6, 'tStartRefresh')  # time at next scr refresh
+        slider6.setAutoDraw(True)
+    
+    # *det_var1* updates
+    if det_var1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        det_var1.frameNStart = frameN  # exact frame index
+        det_var1.tStart = t  # local t and not account for scr refresh
+        det_var1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(det_var1, 'tStartRefresh')  # time at next scr refresh
+        det_var1.setAutoDraw(True)
+    
+    # *slider8* updates
+    if slider8.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider8.frameNStart = frameN  # exact frame index
+        slider8.tStart = t  # local t and not account for scr refresh
+        slider8.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider8, 'tStartRefresh')  # time at next scr refresh
+        slider8.setAutoDraw(True)
+    
+    # *key_resp* updates
+    waitOnFlip = False
+    if key_resp.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        key_resp.frameNStart = frameN  # exact frame index
+        key_resp.tStart = t  # local t and not account for scr refresh
+        key_resp.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(key_resp, 'tStartRefresh')  # time at next scr refresh
+        key_resp.status = STARTED
+        # keyboard checking is just starting
+        waitOnFlip = True
+        win.callOnFlip(key_resp.clock.reset)  # t=0 on next screen flip
+        win.callOnFlip(key_resp.clearEvents, eventType='keyboard')  # clear events on next screen flip
+    if key_resp.status == STARTED and not waitOnFlip:
+        theseKeys = key_resp.getKeys(keyList=['space'], waitRelease=False)
+        _key_resp_allKeys.extend(theseKeys)
+        if len(_key_resp_allKeys):
+            key_resp.keys = _key_resp_allKeys[-1].name  # just the last key pressed
+            key_resp.rt = _key_resp_allKeys[-1].rt
+    if slider.getRating() and jeg_følte1.getRating() and slider3.getRating() and tid1.getRating() and det_gav1.getRating() and slider6.getRating() and det_var1.getRating() and slider8.getRating() and key_resp.keys == "space":
+        continueRoutine = False
+    else:
+        key_resp.keys = []
+        key_resp.rt = []
+    
+    # *text_1* updates
+    if text_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text_1.frameNStart = frameN  # exact frame index
+        text_1.tStart = t  # local t and not account for scr refresh
+        text_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text_1, 'tStartRefresh')  # time at next scr refresh
+        text_1.setAutoDraw(True)
+    
+    # *text_2* updates
+    if text_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text_2.frameNStart = frameN  # exact frame index
+        text_2.tStart = t  # local t and not account for scr refresh
+        text_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text_2, 'tStartRefresh')  # time at next scr refresh
+        text_2.setAutoDraw(True)
+    
+    # *text_3* updates
+    if text_3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text_3.frameNStart = frameN  # exact frame index
+        text_3.tStart = t  # local t and not account for scr refresh
+        text_3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text_3, 'tStartRefresh')  # time at next scr refresh
+        text_3.setAutoDraw(True)
+    
+    # *text4* updates
+    if text4.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text4.frameNStart = frameN  # exact frame index
+        text4.tStart = t  # local t and not account for scr refresh
+        text4.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text4, 'tStartRefresh')  # time at next scr refresh
+        text4.setAutoDraw(True)
+    
+    # *text5* updates
+    if text5.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text5.frameNStart = frameN  # exact frame index
+        text5.tStart = t  # local t and not account for scr refresh
+        text5.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text5, 'tStartRefresh')  # time at next scr refresh
+        text5.setAutoDraw(True)
+    
+    # *text6* updates
+    if text6.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text6.frameNStart = frameN  # exact frame index
+        text6.tStart = t  # local t and not account for scr refresh
+        text6.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text6, 'tStartRefresh')  # time at next scr refresh
+        text6.setAutoDraw(True)
+    
+    # *text7* updates
+    if text7.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text7.frameNStart = frameN  # exact frame index
+        text7.tStart = t  # local t and not account for scr refresh
+        text7.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text7, 'tStartRefresh')  # time at next scr refresh
+        text7.setAutoDraw(True)
+    
+    # *text8* updates
+    if text8.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text8.frameNStart = frameN  # exact frame index
+        text8.tStart = t  # local t and not account for scr refresh
+        text8.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text8, 'tStartRefresh')  # time at next scr refresh
+        text8.setAutoDraw(True)
+    
+    # *labels* updates
+    if labels.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels.frameNStart = frameN  # exact frame index
+        labels.tStart = t  # local t and not account for scr refresh
+        labels.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels, 'tStartRefresh')  # time at next scr refresh
+        labels.setAutoDraw(True)
+    
+    # *labels_2* updates
+    if labels_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels_2.frameNStart = frameN  # exact frame index
+        labels_2.tStart = t  # local t and not account for scr refresh
+        labels_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels_2, 'tStartRefresh')  # time at next scr refresh
+        labels_2.setAutoDraw(True)
+    
+    # *labels_3* updates
+    if labels_3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels_3.frameNStart = frameN  # exact frame index
+        labels_3.tStart = t  # local t and not account for scr refresh
+        labels_3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels_3, 'tStartRefresh')  # time at next scr refresh
+        labels_3.setAutoDraw(True)
+    
+    # *labels_4* updates
+    if labels_4.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels_4.frameNStart = frameN  # exact frame index
+        labels_4.tStart = t  # local t and not account for scr refresh
+        labels_4.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels_4, 'tStartRefresh')  # time at next scr refresh
+        labels_4.setAutoDraw(True)
+    
+    # *labels_5* updates
+    if labels_5.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels_5.frameNStart = frameN  # exact frame index
+        labels_5.tStart = t  # local t and not account for scr refresh
+        labels_5.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels_5, 'tStartRefresh')  # time at next scr refresh
+        labels_5.setAutoDraw(True)
+    
+    # *labels_6* updates
+    if labels_6.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels_6.frameNStart = frameN  # exact frame index
+        labels_6.tStart = t  # local t and not account for scr refresh
+        labels_6.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels_6, 'tStartRefresh')  # time at next scr refresh
+        labels_6.setAutoDraw(True)
+    
+    # *labels_7* updates
+    if labels_7.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels_7.frameNStart = frameN  # exact frame index
+        labels_7.tStart = t  # local t and not account for scr refresh
+        labels_7.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels_7, 'tStartRefresh')  # time at next scr refresh
+        labels_7.setAutoDraw(True)
+    
+    # *labels_8* updates
+    if labels_8.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels_8.frameNStart = frameN  # exact frame index
+        labels_8.tStart = t  # local t and not account for scr refresh
+        labels_8.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels_8, 'tStartRefresh')  # time at next scr refresh
+        labels_8.setAutoDraw(True)
+    
+    # *klik_mellemrum* updates
+    if klik_mellemrum.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        klik_mellemrum.frameNStart = frameN  # exact frame index
+        klik_mellemrum.tStart = t  # local t and not account for scr refresh
+        klik_mellemrum.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(klik_mellemrum, 'tStartRefresh')  # time at next scr refresh
+        klik_mellemrum.setAutoDraw(True)
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in questionComponents:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "question"-------
+for thisComponent in questionComponents:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+thisExp.addData('slider.response', slider.getRating())
+thisExp.addData('slider.rt', slider.getRT())
+thisExp.addData('slider.started', slider.tStartRefresh)
+thisExp.addData('slider.stopped', slider.tStopRefresh)
+thisExp.addData('jeg_følte1.response', jeg_følte1.getRating())
+thisExp.addData('jeg_følte1.rt', jeg_følte1.getRT())
+thisExp.addData('jeg_følte1.started', jeg_følte1.tStartRefresh)
+thisExp.addData('jeg_følte1.stopped', jeg_følte1.tStopRefresh)
+thisExp.addData('slider3.response', slider3.getRating())
+thisExp.addData('slider3.rt', slider3.getRT())
+thisExp.addData('slider3.started', slider3.tStartRefresh)
+thisExp.addData('slider3.stopped', slider3.tStopRefresh)
+thisExp.addData('tid1.response', tid1.getRating())
+thisExp.addData('tid1.rt', tid1.getRT())
+thisExp.addData('tid1.started', tid1.tStartRefresh)
+thisExp.addData('tid1.stopped', tid1.tStopRefresh)
+thisExp.addData('det_gav1.response', det_gav1.getRating())
+thisExp.addData('det_gav1.rt', det_gav1.getRT())
+thisExp.addData('det_gav1.started', det_gav1.tStartRefresh)
+thisExp.addData('det_gav1.stopped', det_gav1.tStopRefresh)
+thisExp.addData('slider6.response', slider6.getRating())
+thisExp.addData('slider6.rt', slider6.getRT())
+thisExp.addData('slider6.started', slider6.tStartRefresh)
+thisExp.addData('slider6.stopped', slider6.tStopRefresh)
+thisExp.addData('det_var1.response', det_var1.getRating())
+thisExp.addData('det_var1.rt', det_var1.getRT())
+thisExp.addData('det_var1.started', det_var1.tStartRefresh)
+thisExp.addData('det_var1.stopped', det_var1.tStopRefresh)
+thisExp.addData('slider8.response', slider8.getRating())
+thisExp.addData('slider8.rt', slider8.getRT())
+thisExp.addData('slider8.started', slider8.tStartRefresh)
+thisExp.addData('slider8.stopped', slider8.tStopRefresh)
+# check responses
+if key_resp.keys in ['', [], None]:  # No response was made
+    key_resp.keys = None
+thisExp.addData('key_resp.keys',key_resp.keys)
+if key_resp.keys != None:  # we had a response
+    thisExp.addData('key_resp.rt', key_resp.rt)
+thisExp.addData('key_resp.started', key_resp.tStartRefresh)
+thisExp.addData('key_resp.stopped', key_resp.tStopRefresh)
+thisExp.nextEntry()
+thisExp.addData('text_1.started', text_1.tStartRefresh)
+thisExp.addData('text_1.stopped', text_1.tStopRefresh)
+thisExp.addData('text_2.started', text_2.tStartRefresh)
+thisExp.addData('text_2.stopped', text_2.tStopRefresh)
+thisExp.addData('text_3.started', text_3.tStartRefresh)
+thisExp.addData('text_3.stopped', text_3.tStopRefresh)
+thisExp.addData('text4.started', text4.tStartRefresh)
+thisExp.addData('text4.stopped', text4.tStopRefresh)
+thisExp.addData('text5.started', text5.tStartRefresh)
+thisExp.addData('text5.stopped', text5.tStopRefresh)
+thisExp.addData('text6.started', text6.tStartRefresh)
+thisExp.addData('text6.stopped', text6.tStopRefresh)
+thisExp.addData('text7.started', text7.tStartRefresh)
+thisExp.addData('text7.stopped', text7.tStopRefresh)
+thisExp.addData('text8.started', text8.tStartRefresh)
+thisExp.addData('text8.stopped', text8.tStopRefresh)
+thisExp.addData('labels.started', labels.tStartRefresh)
+thisExp.addData('labels.stopped', labels.tStopRefresh)
+thisExp.addData('labels_2.started', labels_2.tStartRefresh)
+thisExp.addData('labels_2.stopped', labels_2.tStopRefresh)
+thisExp.addData('labels_3.started', labels_3.tStartRefresh)
+thisExp.addData('labels_3.stopped', labels_3.tStopRefresh)
+thisExp.addData('labels_4.started', labels_4.tStartRefresh)
+thisExp.addData('labels_4.stopped', labels_4.tStopRefresh)
+thisExp.addData('labels_5.started', labels_5.tStartRefresh)
+thisExp.addData('labels_5.stopped', labels_5.tStopRefresh)
+thisExp.addData('labels_6.started', labels_6.tStartRefresh)
+thisExp.addData('labels_6.stopped', labels_6.tStopRefresh)
+thisExp.addData('labels_7.started', labels_7.tStartRefresh)
+thisExp.addData('labels_7.stopped', labels_7.tStopRefresh)
+thisExp.addData('labels_8.started', labels_8.tStartRefresh)
+thisExp.addData('labels_8.stopped', labels_8.tStopRefresh)
+thisExp.addData('klik_mellemrum.started', klik_mellemrum.tStartRefresh)
+thisExp.addData('klik_mellemrum.stopped', klik_mellemrum.tStopRefresh)
+# the Routine "question" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "stim1"-------
+continueRoutine = True
+# update component parameters for each repeat
+# keep track of which components have finished
+stim1Components = [movie_2]
+for thisComponent in stim1Components:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+stim1Clock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "stim1"-------
+while continueRoutine:
+    # get current time
+    t = stim1Clock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=stim1Clock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *movie_2* updates
+    if movie_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        movie_2.frameNStart = frameN  # exact frame index
+        movie_2.tStart = t  # local t and not account for scr refresh
+        movie_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(movie_2, 'tStartRefresh')  # time at next scr refresh
+        movie_2.setAutoDraw(True)
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in stim1Components:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "stim1"-------
+for thisComponent in stim1Components:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+movie_2.stop()
+# the Routine "stim1" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "question2"-------
+continueRoutine = True
+# update component parameters for each repeat
+slider1_1.reset()
+jeg_følte2.reset()
+slider3_1.reset()
+tid2.reset()
+det_gav2.reset()
+slider6_1.reset()
+det_var2.reset()
+slider8_1.reset()
+key_resp_1.keys = []
+key_resp_1.rt = []
+_key_resp_1_allKeys = []
+# keep track of which components have finished
+question2Components = [slider1_1, jeg_følte2, slider3_1, tid2, det_gav2, slider6_1, det_var2, slider8_1, key_resp_1, text_1_1, text2_1, text3_1, text4_1, text5_1, text6_1, text7_1, text8_1, labels2_1, labels2_2, labels2_3, labels2_4, labels2_5, labels2_6, labels2_7, labels2_8, klik_mellemrum_2]
+for thisComponent in question2Components:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+question2Clock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "question2"-------
+while continueRoutine:
+    # get current time
+    t = question2Clock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=question2Clock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *slider1_1* updates
+    if slider1_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider1_1.frameNStart = frameN  # exact frame index
+        slider1_1.tStart = t  # local t and not account for scr refresh
+        slider1_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider1_1, 'tStartRefresh')  # time at next scr refresh
+        slider1_1.setAutoDraw(True)
+    
+    # *jeg_følte2* updates
+    if jeg_følte2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        jeg_følte2.frameNStart = frameN  # exact frame index
+        jeg_følte2.tStart = t  # local t and not account for scr refresh
+        jeg_følte2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(jeg_følte2, 'tStartRefresh')  # time at next scr refresh
+        jeg_følte2.setAutoDraw(True)
+    
+    # *slider3_1* updates
+    if slider3_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider3_1.frameNStart = frameN  # exact frame index
+        slider3_1.tStart = t  # local t and not account for scr refresh
+        slider3_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider3_1, 'tStartRefresh')  # time at next scr refresh
+        slider3_1.setAutoDraw(True)
+    
+    # *tid2* updates
+    if tid2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        tid2.frameNStart = frameN  # exact frame index
+        tid2.tStart = t  # local t and not account for scr refresh
+        tid2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(tid2, 'tStartRefresh')  # time at next scr refresh
+        tid2.setAutoDraw(True)
+    
+    # *det_gav2* updates
+    if det_gav2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        det_gav2.frameNStart = frameN  # exact frame index
+        det_gav2.tStart = t  # local t and not account for scr refresh
+        det_gav2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(det_gav2, 'tStartRefresh')  # time at next scr refresh
+        det_gav2.setAutoDraw(True)
+    
+    # *slider6_1* updates
+    if slider6_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider6_1.frameNStart = frameN  # exact frame index
+        slider6_1.tStart = t  # local t and not account for scr refresh
+        slider6_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider6_1, 'tStartRefresh')  # time at next scr refresh
+        slider6_1.setAutoDraw(True)
+    
+    # *det_var2* updates
+    if det_var2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        det_var2.frameNStart = frameN  # exact frame index
+        det_var2.tStart = t  # local t and not account for scr refresh
+        det_var2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(det_var2, 'tStartRefresh')  # time at next scr refresh
+        det_var2.setAutoDraw(True)
+    
+    # *slider8_1* updates
+    if slider8_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider8_1.frameNStart = frameN  # exact frame index
+        slider8_1.tStart = t  # local t and not account for scr refresh
+        slider8_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider8_1, 'tStartRefresh')  # time at next scr refresh
+        slider8_1.setAutoDraw(True)
+    
+    # *key_resp_1* updates
+    waitOnFlip = False
+    if key_resp_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        key_resp_1.frameNStart = frameN  # exact frame index
+        key_resp_1.tStart = t  # local t and not account for scr refresh
+        key_resp_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(key_resp_1, 'tStartRefresh')  # time at next scr refresh
+        key_resp_1.status = STARTED
+        # keyboard checking is just starting
+        waitOnFlip = True
+        win.callOnFlip(key_resp_1.clock.reset)  # t=0 on next screen flip
+        win.callOnFlip(key_resp_1.clearEvents, eventType='keyboard')  # clear events on next screen flip
+    if key_resp_1.status == STARTED and not waitOnFlip:
+        theseKeys = key_resp_1.getKeys(keyList=['space'], waitRelease=False)
+        _key_resp_1_allKeys.extend(theseKeys)
+        if len(_key_resp_1_allKeys):
+            key_resp_1.keys = _key_resp_1_allKeys[-1].name  # just the last key pressed
+            key_resp_1.rt = _key_resp_1_allKeys[-1].rt
+    if slider1_1.getRating() and jeg_følte2.getRating() and slider3_1.getRating() and tid2.getRating() and det_gav2.getRating() and slider6_1.getRating() and det_var2.getRating() and slider8_1.getRating() and key_resp_1.keys == "space":
+        continueRoutine = False
+    else:
+        key_resp_1.keys = []
+        key_resp_1.rt = []
+    
+    # *text_1_1* updates
+    if text_1_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text_1_1.frameNStart = frameN  # exact frame index
+        text_1_1.tStart = t  # local t and not account for scr refresh
+        text_1_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text_1_1, 'tStartRefresh')  # time at next scr refresh
+        text_1_1.setAutoDraw(True)
+    
+    # *text2_1* updates
+    if text2_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text2_1.frameNStart = frameN  # exact frame index
+        text2_1.tStart = t  # local t and not account for scr refresh
+        text2_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text2_1, 'tStartRefresh')  # time at next scr refresh
+        text2_1.setAutoDraw(True)
+    
+    # *text3_1* updates
+    if text3_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text3_1.frameNStart = frameN  # exact frame index
+        text3_1.tStart = t  # local t and not account for scr refresh
+        text3_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text3_1, 'tStartRefresh')  # time at next scr refresh
+        text3_1.setAutoDraw(True)
+    
+    # *text4_1* updates
+    if text4_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text4_1.frameNStart = frameN  # exact frame index
+        text4_1.tStart = t  # local t and not account for scr refresh
+        text4_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text4_1, 'tStartRefresh')  # time at next scr refresh
+        text4_1.setAutoDraw(True)
+    
+    # *text5_1* updates
+    if text5_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text5_1.frameNStart = frameN  # exact frame index
+        text5_1.tStart = t  # local t and not account for scr refresh
+        text5_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text5_1, 'tStartRefresh')  # time at next scr refresh
+        text5_1.setAutoDraw(True)
+    
+    # *text6_1* updates
+    if text6_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text6_1.frameNStart = frameN  # exact frame index
+        text6_1.tStart = t  # local t and not account for scr refresh
+        text6_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text6_1, 'tStartRefresh')  # time at next scr refresh
+        text6_1.setAutoDraw(True)
+    
+    # *text7_1* updates
+    if text7_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text7_1.frameNStart = frameN  # exact frame index
+        text7_1.tStart = t  # local t and not account for scr refresh
+        text7_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text7_1, 'tStartRefresh')  # time at next scr refresh
+        text7_1.setAutoDraw(True)
+    
+    # *text8_1* updates
+    if text8_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text8_1.frameNStart = frameN  # exact frame index
+        text8_1.tStart = t  # local t and not account for scr refresh
+        text8_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text8_1, 'tStartRefresh')  # time at next scr refresh
+        text8_1.setAutoDraw(True)
+    
+    # *labels2_1* updates
+    if labels2_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels2_1.frameNStart = frameN  # exact frame index
+        labels2_1.tStart = t  # local t and not account for scr refresh
+        labels2_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels2_1, 'tStartRefresh')  # time at next scr refresh
+        labels2_1.setAutoDraw(True)
+    
+    # *labels2_2* updates
+    if labels2_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels2_2.frameNStart = frameN  # exact frame index
+        labels2_2.tStart = t  # local t and not account for scr refresh
+        labels2_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels2_2, 'tStartRefresh')  # time at next scr refresh
+        labels2_2.setAutoDraw(True)
+    
+    # *labels2_3* updates
+    if labels2_3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels2_3.frameNStart = frameN  # exact frame index
+        labels2_3.tStart = t  # local t and not account for scr refresh
+        labels2_3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels2_3, 'tStartRefresh')  # time at next scr refresh
+        labels2_3.setAutoDraw(True)
+    
+    # *labels2_4* updates
+    if labels2_4.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels2_4.frameNStart = frameN  # exact frame index
+        labels2_4.tStart = t  # local t and not account for scr refresh
+        labels2_4.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels2_4, 'tStartRefresh')  # time at next scr refresh
+        labels2_4.setAutoDraw(True)
+    
+    # *labels2_5* updates
+    if labels2_5.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels2_5.frameNStart = frameN  # exact frame index
+        labels2_5.tStart = t  # local t and not account for scr refresh
+        labels2_5.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels2_5, 'tStartRefresh')  # time at next scr refresh
+        labels2_5.setAutoDraw(True)
+    
+    # *labels2_6* updates
+    if labels2_6.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels2_6.frameNStart = frameN  # exact frame index
+        labels2_6.tStart = t  # local t and not account for scr refresh
+        labels2_6.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels2_6, 'tStartRefresh')  # time at next scr refresh
+        labels2_6.setAutoDraw(True)
+    
+    # *labels2_7* updates
+    if labels2_7.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels2_7.frameNStart = frameN  # exact frame index
+        labels2_7.tStart = t  # local t and not account for scr refresh
+        labels2_7.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels2_7, 'tStartRefresh')  # time at next scr refresh
+        labels2_7.setAutoDraw(True)
+    
+    # *labels2_8* updates
+    if labels2_8.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels2_8.frameNStart = frameN  # exact frame index
+        labels2_8.tStart = t  # local t and not account for scr refresh
+        labels2_8.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels2_8, 'tStartRefresh')  # time at next scr refresh
+        labels2_8.setAutoDraw(True)
+    
+    # *klik_mellemrum_2* updates
+    if klik_mellemrum_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        klik_mellemrum_2.frameNStart = frameN  # exact frame index
+        klik_mellemrum_2.tStart = t  # local t and not account for scr refresh
+        klik_mellemrum_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(klik_mellemrum_2, 'tStartRefresh')  # time at next scr refresh
+        klik_mellemrum_2.setAutoDraw(True)
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in question2Components:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "question2"-------
+for thisComponent in question2Components:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+thisExp.addData('slider1_1.response', slider1_1.getRating())
+thisExp.addData('slider1_1.rt', slider1_1.getRT())
+thisExp.addData('slider1_1.started', slider1_1.tStartRefresh)
+thisExp.addData('slider1_1.stopped', slider1_1.tStopRefresh)
+thisExp.addData('jeg_følte2.response', jeg_følte2.getRating())
+thisExp.addData('jeg_følte2.rt', jeg_følte2.getRT())
+thisExp.addData('jeg_følte2.started', jeg_følte2.tStartRefresh)
+thisExp.addData('jeg_følte2.stopped', jeg_følte2.tStopRefresh)
+thisExp.addData('slider3_1.response', slider3_1.getRating())
+thisExp.addData('slider3_1.rt', slider3_1.getRT())
+thisExp.addData('slider3_1.started', slider3_1.tStartRefresh)
+thisExp.addData('slider3_1.stopped', slider3_1.tStopRefresh)
+thisExp.addData('tid2.response', tid2.getRating())
+thisExp.addData('tid2.rt', tid2.getRT())
+thisExp.addData('tid2.started', tid2.tStartRefresh)
+thisExp.addData('tid2.stopped', tid2.tStopRefresh)
+thisExp.addData('det_gav2.response', det_gav2.getRating())
+thisExp.addData('det_gav2.rt', det_gav2.getRT())
+thisExp.addData('det_gav2.started', det_gav2.tStartRefresh)
+thisExp.addData('det_gav2.stopped', det_gav2.tStopRefresh)
+thisExp.addData('slider6_1.response', slider6_1.getRating())
+thisExp.addData('slider6_1.rt', slider6_1.getRT())
+thisExp.addData('slider6_1.started', slider6_1.tStartRefresh)
+thisExp.addData('slider6_1.stopped', slider6_1.tStopRefresh)
+thisExp.addData('det_var2.response', det_var2.getRating())
+thisExp.addData('det_var2.rt', det_var2.getRT())
+thisExp.addData('det_var2.started', det_var2.tStartRefresh)
+thisExp.addData('det_var2.stopped', det_var2.tStopRefresh)
+thisExp.addData('slider8_1.response', slider8_1.getRating())
+thisExp.addData('slider8_1.rt', slider8_1.getRT())
+thisExp.addData('slider8_1.started', slider8_1.tStartRefresh)
+thisExp.addData('slider8_1.stopped', slider8_1.tStopRefresh)
+# check responses
+if key_resp_1.keys in ['', [], None]:  # No response was made
+    key_resp_1.keys = None
+thisExp.addData('key_resp_1.keys',key_resp_1.keys)
+if key_resp_1.keys != None:  # we had a response
+    thisExp.addData('key_resp_1.rt', key_resp_1.rt)
+thisExp.addData('key_resp_1.started', key_resp_1.tStartRefresh)
+thisExp.addData('key_resp_1.stopped', key_resp_1.tStopRefresh)
+thisExp.nextEntry()
+thisExp.addData('text_1_1.started', text_1_1.tStartRefresh)
+thisExp.addData('text_1_1.stopped', text_1_1.tStopRefresh)
+thisExp.addData('text2_1.started', text2_1.tStartRefresh)
+thisExp.addData('text2_1.stopped', text2_1.tStopRefresh)
+thisExp.addData('text3_1.started', text3_1.tStartRefresh)
+thisExp.addData('text3_1.stopped', text3_1.tStopRefresh)
+thisExp.addData('text4_1.started', text4_1.tStartRefresh)
+thisExp.addData('text4_1.stopped', text4_1.tStopRefresh)
+thisExp.addData('text5_1.started', text5_1.tStartRefresh)
+thisExp.addData('text5_1.stopped', text5_1.tStopRefresh)
+thisExp.addData('text6_1.started', text6_1.tStartRefresh)
+thisExp.addData('text6_1.stopped', text6_1.tStopRefresh)
+thisExp.addData('text7_1.started', text7_1.tStartRefresh)
+thisExp.addData('text7_1.stopped', text7_1.tStopRefresh)
+thisExp.addData('text8_1.started', text8_1.tStartRefresh)
+thisExp.addData('text8_1.stopped', text8_1.tStopRefresh)
+thisExp.addData('labels2_1.started', labels2_1.tStartRefresh)
+thisExp.addData('labels2_1.stopped', labels2_1.tStopRefresh)
+thisExp.addData('labels2_2.started', labels2_2.tStartRefresh)
+thisExp.addData('labels2_2.stopped', labels2_2.tStopRefresh)
+thisExp.addData('labels2_3.started', labels2_3.tStartRefresh)
+thisExp.addData('labels2_3.stopped', labels2_3.tStopRefresh)
+thisExp.addData('labels2_4.started', labels2_4.tStartRefresh)
+thisExp.addData('labels2_4.stopped', labels2_4.tStopRefresh)
+thisExp.addData('labels2_5.started', labels2_5.tStartRefresh)
+thisExp.addData('labels2_5.stopped', labels2_5.tStopRefresh)
+thisExp.addData('labels2_6.started', labels2_6.tStartRefresh)
+thisExp.addData('labels2_6.stopped', labels2_6.tStopRefresh)
+thisExp.addData('labels2_7.started', labels2_7.tStartRefresh)
+thisExp.addData('labels2_7.stopped', labels2_7.tStopRefresh)
+thisExp.addData('labels2_8.started', labels2_8.tStartRefresh)
+thisExp.addData('labels2_8.stopped', labels2_8.tStopRefresh)
+thisExp.addData('klik_mellemrum_2.started', klik_mellemrum_2.tStartRefresh)
+thisExp.addData('klik_mellemrum_2.stopped', klik_mellemrum_2.tStopRefresh)
+# the Routine "question2" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "stim2"-------
+continueRoutine = True
+# update component parameters for each repeat
+# keep track of which components have finished
+stim2Components = [movie_3]
+for thisComponent in stim2Components:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+stim2Clock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "stim2"-------
+while continueRoutine:
+    # get current time
+    t = stim2Clock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=stim2Clock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *movie_3* updates
+    if movie_3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        movie_3.frameNStart = frameN  # exact frame index
+        movie_3.tStart = t  # local t and not account for scr refresh
+        movie_3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(movie_3, 'tStartRefresh')  # time at next scr refresh
+        movie_3.setAutoDraw(True)
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in stim2Components:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "stim2"-------
+for thisComponent in stim2Components:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+movie_3.stop()
+# the Routine "stim2" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "question3"-------
+continueRoutine = True
+# update component parameters for each repeat
+slider1_2.reset()
+jeg_følte3.reset()
+slider3_2.reset()
+tid3.reset()
+det_gav3.reset()
+slider6_2.reset()
+det_var3.reset()
+slider8_2.reset()
+key_resp_2.keys = []
+key_resp_2.rt = []
+_key_resp_2_allKeys = []
+# keep track of which components have finished
+question3Components = [slider1_2, jeg_følte3, slider3_2, tid3, det_gav3, slider6_2, det_var3, slider8_2, key_resp_2, text_1_2, text2_2, text3_2, text4_2, text5_2, text6_2, text7_2, text8_2, labels3_1, labels3_2, labels3_3, labels3_4, labels3_5, labels3_6, labels3_7, labels3_8, klik_mellemrum_3]
+for thisComponent in question3Components:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+question3Clock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "question3"-------
+while continueRoutine:
+    # get current time
+    t = question3Clock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=question3Clock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *slider1_2* updates
+    if slider1_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider1_2.frameNStart = frameN  # exact frame index
+        slider1_2.tStart = t  # local t and not account for scr refresh
+        slider1_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider1_2, 'tStartRefresh')  # time at next scr refresh
+        slider1_2.setAutoDraw(True)
+    
+    # *jeg_følte3* updates
+    if jeg_følte3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        jeg_følte3.frameNStart = frameN  # exact frame index
+        jeg_følte3.tStart = t  # local t and not account for scr refresh
+        jeg_følte3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(jeg_følte3, 'tStartRefresh')  # time at next scr refresh
+        jeg_følte3.setAutoDraw(True)
+    
+    # *slider3_2* updates
+    if slider3_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider3_2.frameNStart = frameN  # exact frame index
+        slider3_2.tStart = t  # local t and not account for scr refresh
+        slider3_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider3_2, 'tStartRefresh')  # time at next scr refresh
+        slider3_2.setAutoDraw(True)
+    
+    # *tid3* updates
+    if tid3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        tid3.frameNStart = frameN  # exact frame index
+        tid3.tStart = t  # local t and not account for scr refresh
+        tid3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(tid3, 'tStartRefresh')  # time at next scr refresh
+        tid3.setAutoDraw(True)
+    
+    # *det_gav3* updates
+    if det_gav3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        det_gav3.frameNStart = frameN  # exact frame index
+        det_gav3.tStart = t  # local t and not account for scr refresh
+        det_gav3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(det_gav3, 'tStartRefresh')  # time at next scr refresh
+        det_gav3.setAutoDraw(True)
+    
+    # *slider6_2* updates
+    if slider6_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider6_2.frameNStart = frameN  # exact frame index
+        slider6_2.tStart = t  # local t and not account for scr refresh
+        slider6_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider6_2, 'tStartRefresh')  # time at next scr refresh
+        slider6_2.setAutoDraw(True)
+    
+    # *det_var3* updates
+    if det_var3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        det_var3.frameNStart = frameN  # exact frame index
+        det_var3.tStart = t  # local t and not account for scr refresh
+        det_var3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(det_var3, 'tStartRefresh')  # time at next scr refresh
+        det_var3.setAutoDraw(True)
+    
+    # *slider8_2* updates
+    if slider8_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider8_2.frameNStart = frameN  # exact frame index
+        slider8_2.tStart = t  # local t and not account for scr refresh
+        slider8_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider8_2, 'tStartRefresh')  # time at next scr refresh
+        slider8_2.setAutoDraw(True)
+    
+    # *key_resp_2* updates
+    waitOnFlip = False
+    if key_resp_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        key_resp_2.frameNStart = frameN  # exact frame index
+        key_resp_2.tStart = t  # local t and not account for scr refresh
+        key_resp_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(key_resp_2, 'tStartRefresh')  # time at next scr refresh
+        key_resp_2.status = STARTED
+        # keyboard checking is just starting
+        waitOnFlip = True
+        win.callOnFlip(key_resp_2.clock.reset)  # t=0 on next screen flip
+        win.callOnFlip(key_resp_2.clearEvents, eventType='keyboard')  # clear events on next screen flip
+    if key_resp_2.status == STARTED and not waitOnFlip:
+        theseKeys = key_resp_2.getKeys(keyList=['space'], waitRelease=False)
+        _key_resp_2_allKeys.extend(theseKeys)
+        if len(_key_resp_2_allKeys):
+            key_resp_2.keys = _key_resp_2_allKeys[-1].name  # just the last key pressed
+            key_resp_2.rt = _key_resp_2_allKeys[-1].rt
+    if slider1_2.getRating() and jeg_følte3.getRating() and slider3_2.getRating() and tid3.getRating() and det_gav3.getRating() and slider6_2.getRating() and det_var3.getRating() and slider8_2.getRating() and key_resp_2.keys == "space":
+        continueRoutine = False
+    else:
+        key_resp_2.keys = []
+        key_resp_2.rt = []
+    
+    # *text_1_2* updates
+    if text_1_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text_1_2.frameNStart = frameN  # exact frame index
+        text_1_2.tStart = t  # local t and not account for scr refresh
+        text_1_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text_1_2, 'tStartRefresh')  # time at next scr refresh
+        text_1_2.setAutoDraw(True)
+    
+    # *text2_2* updates
+    if text2_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text2_2.frameNStart = frameN  # exact frame index
+        text2_2.tStart = t  # local t and not account for scr refresh
+        text2_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text2_2, 'tStartRefresh')  # time at next scr refresh
+        text2_2.setAutoDraw(True)
+    
+    # *text3_2* updates
+    if text3_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text3_2.frameNStart = frameN  # exact frame index
+        text3_2.tStart = t  # local t and not account for scr refresh
+        text3_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text3_2, 'tStartRefresh')  # time at next scr refresh
+        text3_2.setAutoDraw(True)
+    
+    # *text4_2* updates
+    if text4_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text4_2.frameNStart = frameN  # exact frame index
+        text4_2.tStart = t  # local t and not account for scr refresh
+        text4_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text4_2, 'tStartRefresh')  # time at next scr refresh
+        text4_2.setAutoDraw(True)
+    
+    # *text5_2* updates
+    if text5_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text5_2.frameNStart = frameN  # exact frame index
+        text5_2.tStart = t  # local t and not account for scr refresh
+        text5_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text5_2, 'tStartRefresh')  # time at next scr refresh
+        text5_2.setAutoDraw(True)
+    
+    # *text6_2* updates
+    if text6_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text6_2.frameNStart = frameN  # exact frame index
+        text6_2.tStart = t  # local t and not account for scr refresh
+        text6_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text6_2, 'tStartRefresh')  # time at next scr refresh
+        text6_2.setAutoDraw(True)
+    
+    # *text7_2* updates
+    if text7_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text7_2.frameNStart = frameN  # exact frame index
+        text7_2.tStart = t  # local t and not account for scr refresh
+        text7_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text7_2, 'tStartRefresh')  # time at next scr refresh
+        text7_2.setAutoDraw(True)
+    
+    # *text8_2* updates
+    if text8_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        text8_2.frameNStart = frameN  # exact frame index
+        text8_2.tStart = t  # local t and not account for scr refresh
+        text8_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(text8_2, 'tStartRefresh')  # time at next scr refresh
+        text8_2.setAutoDraw(True)
+    
+    # *labels3_1* updates
+    if labels3_1.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels3_1.frameNStart = frameN  # exact frame index
+        labels3_1.tStart = t  # local t and not account for scr refresh
+        labels3_1.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels3_1, 'tStartRefresh')  # time at next scr refresh
+        labels3_1.setAutoDraw(True)
+    
+    # *labels3_2* updates
+    if labels3_2.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels3_2.frameNStart = frameN  # exact frame index
+        labels3_2.tStart = t  # local t and not account for scr refresh
+        labels3_2.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels3_2, 'tStartRefresh')  # time at next scr refresh
+        labels3_2.setAutoDraw(True)
+    
+    # *labels3_3* updates
+    if labels3_3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels3_3.frameNStart = frameN  # exact frame index
+        labels3_3.tStart = t  # local t and not account for scr refresh
+        labels3_3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels3_3, 'tStartRefresh')  # time at next scr refresh
+        labels3_3.setAutoDraw(True)
+    
+    # *labels3_4* updates
+    if labels3_4.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels3_4.frameNStart = frameN  # exact frame index
+        labels3_4.tStart = t  # local t and not account for scr refresh
+        labels3_4.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels3_4, 'tStartRefresh')  # time at next scr refresh
+        labels3_4.setAutoDraw(True)
+    
+    # *labels3_5* updates
+    if labels3_5.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels3_5.frameNStart = frameN  # exact frame index
+        labels3_5.tStart = t  # local t and not account for scr refresh
+        labels3_5.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels3_5, 'tStartRefresh')  # time at next scr refresh
+        labels3_5.setAutoDraw(True)
+    
+    # *labels3_6* updates
+    if labels3_6.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels3_6.frameNStart = frameN  # exact frame index
+        labels3_6.tStart = t  # local t and not account for scr refresh
+        labels3_6.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels3_6, 'tStartRefresh')  # time at next scr refresh
+        labels3_6.setAutoDraw(True)
+    
+    # *labels3_7* updates
+    if labels3_7.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels3_7.frameNStart = frameN  # exact frame index
+        labels3_7.tStart = t  # local t and not account for scr refresh
+        labels3_7.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels3_7, 'tStartRefresh')  # time at next scr refresh
+        labels3_7.setAutoDraw(True)
+    
+    # *labels3_8* updates
+    if labels3_8.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        labels3_8.frameNStart = frameN  # exact frame index
+        labels3_8.tStart = t  # local t and not account for scr refresh
+        labels3_8.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(labels3_8, 'tStartRefresh')  # time at next scr refresh
+        labels3_8.setAutoDraw(True)
+    
+    # *klik_mellemrum_3* updates
+    if klik_mellemrum_3.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        klik_mellemrum_3.frameNStart = frameN  # exact frame index
+        klik_mellemrum_3.tStart = t  # local t and not account for scr refresh
+        klik_mellemrum_3.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(klik_mellemrum_3, 'tStartRefresh')  # time at next scr refresh
+        klik_mellemrum_3.setAutoDraw(True)
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in question3Components:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "question3"-------
+for thisComponent in question3Components:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+thisExp.addData('slider1_2.response', slider1_2.getRating())
+thisExp.addData('slider1_2.rt', slider1_2.getRT())
+thisExp.addData('slider1_2.started', slider1_2.tStartRefresh)
+thisExp.addData('slider1_2.stopped', slider1_2.tStopRefresh)
+thisExp.addData('jeg_følte3.response', jeg_følte3.getRating())
+thisExp.addData('jeg_følte3.rt', jeg_følte3.getRT())
+thisExp.addData('jeg_følte3.started', jeg_følte3.tStartRefresh)
+thisExp.addData('jeg_følte3.stopped', jeg_følte3.tStopRefresh)
+thisExp.addData('slider3_2.response', slider3_2.getRating())
+thisExp.addData('slider3_2.rt', slider3_2.getRT())
+thisExp.addData('slider3_2.started', slider3_2.tStartRefresh)
+thisExp.addData('slider3_2.stopped', slider3_2.tStopRefresh)
+thisExp.addData('tid3.response', tid3.getRating())
+thisExp.addData('tid3.rt', tid3.getRT())
+thisExp.addData('tid3.started', tid3.tStartRefresh)
+thisExp.addData('tid3.stopped', tid3.tStopRefresh)
+thisExp.addData('det_gav3.response', det_gav3.getRating())
+thisExp.addData('det_gav3.rt', det_gav3.getRT())
+thisExp.addData('det_gav3.started', det_gav3.tStartRefresh)
+thisExp.addData('det_gav3.stopped', det_gav3.tStopRefresh)
+thisExp.addData('slider6_2.response', slider6_2.getRating())
+thisExp.addData('slider6_2.rt', slider6_2.getRT())
+thisExp.addData('slider6_2.started', slider6_2.tStartRefresh)
+thisExp.addData('slider6_2.stopped', slider6_2.tStopRefresh)
+thisExp.addData('det_var3.response', det_var3.getRating())
+thisExp.addData('det_var3.rt', det_var3.getRT())
+thisExp.addData('det_var3.started', det_var3.tStartRefresh)
+thisExp.addData('det_var3.stopped', det_var3.tStopRefresh)
+thisExp.addData('slider8_2.response', slider8_2.getRating())
+thisExp.addData('slider8_2.rt', slider8_2.getRT())
+thisExp.addData('slider8_2.started', slider8_2.tStartRefresh)
+thisExp.addData('slider8_2.stopped', slider8_2.tStopRefresh)
+# check responses
+if key_resp_2.keys in ['', [], None]:  # No response was made
+    key_resp_2.keys = None
+thisExp.addData('key_resp_2.keys',key_resp_2.keys)
+if key_resp_2.keys != None:  # we had a response
+    thisExp.addData('key_resp_2.rt', key_resp_2.rt)
+thisExp.addData('key_resp_2.started', key_resp_2.tStartRefresh)
+thisExp.addData('key_resp_2.stopped', key_resp_2.tStopRefresh)
+thisExp.nextEntry()
+thisExp.addData('text_1_2.started', text_1_2.tStartRefresh)
+thisExp.addData('text_1_2.stopped', text_1_2.tStopRefresh)
+thisExp.addData('text2_2.started', text2_2.tStartRefresh)
+thisExp.addData('text2_2.stopped', text2_2.tStopRefresh)
+thisExp.addData('text3_2.started', text3_2.tStartRefresh)
+thisExp.addData('text3_2.stopped', text3_2.tStopRefresh)
+thisExp.addData('text4_2.started', text4_2.tStartRefresh)
+thisExp.addData('text4_2.stopped', text4_2.tStopRefresh)
+thisExp.addData('text5_2.started', text5_2.tStartRefresh)
+thisExp.addData('text5_2.stopped', text5_2.tStopRefresh)
+thisExp.addData('text6_2.started', text6_2.tStartRefresh)
+thisExp.addData('text6_2.stopped', text6_2.tStopRefresh)
+thisExp.addData('text7_2.started', text7_2.tStartRefresh)
+thisExp.addData('text7_2.stopped', text7_2.tStopRefresh)
+thisExp.addData('text8_2.started', text8_2.tStartRefresh)
+thisExp.addData('text8_2.stopped', text8_2.tStopRefresh)
+thisExp.addData('labels3_1.started', labels3_1.tStartRefresh)
+thisExp.addData('labels3_1.stopped', labels3_1.tStopRefresh)
+thisExp.addData('labels3_2.started', labels3_2.tStartRefresh)
+thisExp.addData('labels3_2.stopped', labels3_2.tStopRefresh)
+thisExp.addData('labels3_3.started', labels3_3.tStartRefresh)
+thisExp.addData('labels3_3.stopped', labels3_3.tStopRefresh)
+thisExp.addData('labels3_4.started', labels3_4.tStartRefresh)
+thisExp.addData('labels3_4.stopped', labels3_4.tStopRefresh)
+thisExp.addData('labels3_5.started', labels3_5.tStartRefresh)
+thisExp.addData('labels3_5.stopped', labels3_5.tStopRefresh)
+thisExp.addData('labels3_6.started', labels3_6.tStartRefresh)
+thisExp.addData('labels3_6.stopped', labels3_6.tStopRefresh)
+thisExp.addData('labels3_7.started', labels3_7.tStartRefresh)
+thisExp.addData('labels3_7.stopped', labels3_7.tStopRefresh)
+thisExp.addData('labels3_8.started', labels3_8.tStartRefresh)
+thisExp.addData('labels3_8.stopped', labels3_8.tStopRefresh)
+thisExp.addData('klik_mellemrum_3.started', klik_mellemrum_3.tStartRefresh)
+thisExp.addData('klik_mellemrum_3.stopped', klik_mellemrum_3.tStopRefresh)
+# the Routine "question3" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "ending_question"-------
+continueRoutine = True
+# update component parameters for each repeat
+slider_chat.reset()
+key_question.keys = []
+key_question.rt = []
+_key_question_allKeys = []
+# keep track of which components have finished
+ending_questionComponents = [slider_chat, key_question, tekst_question]
+for thisComponent in ending_questionComponents:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+ending_questionClock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "ending_question"-------
+while continueRoutine:
+    # get current time
+    t = ending_questionClock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=ending_questionClock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *slider_chat* updates
+    if slider_chat.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        slider_chat.frameNStart = frameN  # exact frame index
+        slider_chat.tStart = t  # local t and not account for scr refresh
+        slider_chat.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(slider_chat, 'tStartRefresh')  # time at next scr refresh
+        slider_chat.setAutoDraw(True)
+    
+    # *key_question* updates
+    waitOnFlip = False
+    if key_question.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        key_question.frameNStart = frameN  # exact frame index
+        key_question.tStart = t  # local t and not account for scr refresh
+        key_question.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(key_question, 'tStartRefresh')  # time at next scr refresh
+        key_question.status = STARTED
+        # keyboard checking is just starting
+        waitOnFlip = True
+        win.callOnFlip(key_question.clock.reset)  # t=0 on next screen flip
+        win.callOnFlip(key_question.clearEvents, eventType='keyboard')  # clear events on next screen flip
+    if key_question.status == STARTED and not waitOnFlip:
+        theseKeys = key_question.getKeys(keyList=['space'], waitRelease=False)
+        _key_question_allKeys.extend(theseKeys)
+        if len(_key_question_allKeys):
+            key_question.keys = _key_question_allKeys[-1].name  # just the last key pressed
+            key_question.rt = _key_question_allKeys[-1].rt
+    if slider_chat.getRating() and key_question.keys == "space":
+        continueRoutine = False
+    else:
+        key_question.keys = []
+        key_question.rt = []
+    
+    # *tekst_question* updates
+    if tekst_question.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        tekst_question.frameNStart = frameN  # exact frame index
+        tekst_question.tStart = t  # local t and not account for scr refresh
+        tekst_question.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(tekst_question, 'tStartRefresh')  # time at next scr refresh
+        tekst_question.setAutoDraw(True)
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in ending_questionComponents:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "ending_question"-------
+for thisComponent in ending_questionComponents:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+thisExp.addData('slider_chat.response', slider_chat.getRating())
+thisExp.addData('slider_chat.rt', slider_chat.getRT())
+thisExp.addData('slider_chat.started', slider_chat.tStartRefresh)
+thisExp.addData('slider_chat.stopped', slider_chat.tStopRefresh)
+# check responses
+if key_question.keys in ['', [], None]:  # No response was made
+    key_question.keys = None
+thisExp.addData('key_question.keys',key_question.keys)
+if key_question.keys != None:  # we had a response
+    thisExp.addData('key_question.rt', key_question.rt)
+thisExp.addData('key_question.started', key_question.tStartRefresh)
+thisExp.addData('key_question.stopped', key_question.tStopRefresh)
+thisExp.nextEntry()
+thisExp.addData('tekst_question.started', tekst_question.tStartRefresh)
+thisExp.addData('tekst_question.stopped', tekst_question.tStopRefresh)
+# the Routine "ending_question" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# ------Prepare to start Routine "ending"-------
+continueRoutine = True
+# update component parameters for each repeat
+key_ending.keys = []
+key_ending.rt = []
+_key_ending_allKeys = []
+if key_ending.keys == "space":
+    continueRoutine = False
+
+# keep track of which components have finished
+endingComponents = [ending_text, key_ending]
+for thisComponent in endingComponents:
+    thisComponent.tStart = None
+    thisComponent.tStop = None
+    thisComponent.tStartRefresh = None
+    thisComponent.tStopRefresh = None
+    if hasattr(thisComponent, 'status'):
+        thisComponent.status = NOT_STARTED
+# reset timers
+t = 0
+_timeToFirstFrame = win.getFutureFlipTime(clock="now")
+endingClock.reset(-_timeToFirstFrame)  # t0 is time of first possible flip
+frameN = -1
+
+# -------Run Routine "ending"-------
+while continueRoutine:
+    # get current time
+    t = endingClock.getTime()
+    tThisFlip = win.getFutureFlipTime(clock=endingClock)
+    tThisFlipGlobal = win.getFutureFlipTime(clock=None)
+    frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+    # update/draw components on each frame
+    
+    # *ending_text* updates
+    if ending_text.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        ending_text.frameNStart = frameN  # exact frame index
+        ending_text.tStart = t  # local t and not account for scr refresh
+        ending_text.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(ending_text, 'tStartRefresh')  # time at next scr refresh
+        ending_text.setAutoDraw(True)
+    
+    # *key_ending* updates
+    waitOnFlip = False
+    if key_ending.status == NOT_STARTED and tThisFlip >= 0.0-frameTolerance:
+        # keep track of start time/frame for later
+        key_ending.frameNStart = frameN  # exact frame index
+        key_ending.tStart = t  # local t and not account for scr refresh
+        key_ending.tStartRefresh = tThisFlipGlobal  # on global time
+        win.timeOnFlip(key_ending, 'tStartRefresh')  # time at next scr refresh
+        key_ending.status = STARTED
+        # keyboard checking is just starting
+        waitOnFlip = True
+        win.callOnFlip(key_ending.clock.reset)  # t=0 on next screen flip
+        win.callOnFlip(key_ending.clearEvents, eventType='keyboard')  # clear events on next screen flip
+    if key_ending.status == STARTED and not waitOnFlip:
+        theseKeys = key_ending.getKeys(keyList=['space'], waitRelease=False)
+        _key_ending_allKeys.extend(theseKeys)
+        if len(_key_ending_allKeys):
+            key_ending.keys = _key_ending_allKeys[-1].name  # just the last key pressed
+            key_ending.rt = _key_ending_allKeys[-1].rt
+            # a response ends the routine
+            continueRoutine = False
+    
+    # check for quit (typically the Esc key)
+    if endExpNow or defaultKeyboard.getKeys(keyList=["escape"]):
+        core.quit()
+    
+    # check if all components have finished
+    if not continueRoutine:  # a component has requested a forced-end of Routine
+        break
+    continueRoutine = False  # will revert to True if at least one component still running
+    for thisComponent in endingComponents:
+        if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+            continueRoutine = True
+            break  # at least one component has not yet finished
+    
+    # refresh the screen
+    if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+        win.flip()
+
+# -------Ending Routine "ending"-------
+for thisComponent in endingComponents:
+    if hasattr(thisComponent, "setAutoDraw"):
+        thisComponent.setAutoDraw(False)
+thisExp.addData('ending_text.started', ending_text.tStartRefresh)
+thisExp.addData('ending_text.stopped', ending_text.tStopRefresh)
+# check responses
+if key_ending.keys in ['', [], None]:  # No response was made
+    key_ending.keys = None
+thisExp.addData('key_ending.keys',key_ending.keys)
+if key_ending.keys != None:  # we had a response
+    thisExp.addData('key_ending.rt', key_ending.rt)
+thisExp.addData('key_ending.started', key_ending.tStartRefresh)
+thisExp.addData('key_ending.stopped', key_ending.tStopRefresh)
+thisExp.nextEntry()
+# the Routine "ending" was not non-slip safe, so reset the non-slip timer
+routineTimer.reset()
+
+# Flip one final time so any remaining win.callOnFlip() 
+# and win.timeOnFlip() tasks get executed before quitting
+win.flip()
+
+# these shouldn't be strictly necessary (should auto-save)
+thisExp.saveAsWideText(filename+'.csv', delim='auto')
+thisExp.saveAsPickle(filename)
+logging.flush()
+# make sure everything is closed down
+thisExp.abort()  # or data files will save again on exit
+win.close()
+core.quit()

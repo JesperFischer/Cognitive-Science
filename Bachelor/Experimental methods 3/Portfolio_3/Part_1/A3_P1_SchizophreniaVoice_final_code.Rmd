@@ -1,0 +1,299 @@
+---
+title: "Assignment 3 - Part 1 - Voice In Schizophrenia"
+author: "Daniel"
+date: "Oktober 01, 2020"
+output: html_document
+---
+
+```{r}
+#Load packages
+pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret,merTools, tidyverse, simr, sjmisc, FinCal, gmodels)
+```
+
+
+```{r}
+#Import pitch file
+files = list.files("/Users/Daniel/Documents/Cognitive Science/3rd Semester/Methods 3/methods3_A3/Pitch/", "*.txt", full.names = TRUE)
+
+#Empty dataframe
+store = NULL
+
+#Loop through all the files and create one big dataframe
+for (i in 1:length(files)) {
+        lille = read.table(files[i], header = T) #New dataframe with time and f0
+        
+        mindre = setNames(data.frame(matrix(ncol = 1, nrow = 1)), c("dirname")) #Empty df
+        
+        #Adding time variables
+        mindre$dirname = str_sub(files[i], 85,)
+        mindre$Tmean = mean(lille$time)
+        mindre$Tmedian = median(lille$time)
+        mindre$Tsd = sd(lille$time)
+        Trange = range(lille$time)
+        mindre$Trangemin = Trange[1]
+        mindre$Trangemax = Trange[2]
+        mindre$Tiqr = IQR(lille$time)
+        mindre$Tmad = mad(lille$time)
+        mindre$Tcv = coefficient.variation(sd(lille$time),mean(lille$time))
+        ci = ci(lille$time)
+        mindre$Tcilower = ci[2]
+        mindre$Tciupper = ci[3]
+        mindre$Tcierror = ci[4]
+        
+        #Adding f0 variables
+        mindre$Fmean = mean(lille$f0)
+        mindre$Fmedian = median(lille$f0)
+        mindre$Fsd = sd(lille$f0)
+        Frange = range(lille$f0)
+        mindre$Frangemin = Frange[1]
+        mindre$Frangemax = Frange[2]
+        mindre$Fiqr = IQR(lille$f0)
+        mindre$Fmad = mad(lille$f0)
+        mindre$Fcv = coefficient.variation(sd(lille$f0),mean(lille$f0))
+        ci = ci(lille$f0)
+        mindre$Fcilower = ci[2]
+        mindre$Fciupper = ci[3]
+        mindre$Fcierror = ci[4]
+        
+        #For each loop combine the new small df with the df from out of the loop
+        store = rbind(store,mindre)
+        
+        print(i) #Show how many files it has looped through
+        
+}
+
+#Write a csv file with the data
+write.csv(store, "storev2.csv")
+```
+
+Adding the variables to the data frame
+#```{r}
+#load pitch
+pitch = read.csv("storev2.csv")
+
+#Study
+x = sub(".*y","",pitch$dirname)
+pitch$study = sub("D.*","",x)
+
+#Diagnosis
+x = sub(".*D","",pitch$dirname)
+pitch$diagnosis = sub("S.*","",x)
+
+#Subject
+x = sub(".*S","",pitch$dirname)
+pitch$subject = sub("T.*","",x)
+
+#Trial
+x = sub(".*T","",pitch$dirname)
+x = str_sub(x,0,2)
+pitch$trial = str_remove(x, "[_.]")
+
+#make unique name for subject (Study + subject + diagnosis)
+pitch$name = as.numeric(paste(pitch$study, pitch$subject, sep = ""))
+pitch$name = as.numeric(paste(pitch$name, pitch$diagnosis, sep = ""))
+```
+
+
+### Now you need to merge demographic/clinical, duration and pitch data
+
+#```{r}
+#Load emographic data
+demo = read.csv("DemographicData.csv",sep = ";")
+
+#Adding a "0" to particpant number from study 6 and removing study 7
+demo6 = filter(demo, demo$Study == "6")
+demo6$name = as.numeric(paste(demo6$Study, demo6$Participant, sep = "0"))
+demou6 = filter(demo, demo$Study != "6")
+demou6 = filter(demou6, demou6$Study != "7")
+
+#Adding a unique name
+demou6$name = as.numeric(paste(demou6$Study, demou6$Participant, sep = ""))
+demo = rbind(demou6, demo6)
+demo$Diagnosis = ifelse(demo$Diagnosis == "Control",0,1)
+demo$name = as.numeric(paste(demo$name, demo$Diagnosis, sep = ""))
+
+#Loading duration (articulation) data
+dura = read.csv("Articulation.csv")
+
+#Adding variables
+durastudy = sub(".*y","",dura$soundname)
+dura$study = sub("D.*","",durastudy)
+durasubject = sub(".*S","",dura$soundname)
+dura$subject = sub("T.*","",durasubject)
+
+dura$diagnosis = sub(".*D","",dura$soundname)
+dura$diagnosis = sub("S.*","",dura$diagnosis)
+
+dura$trial = sub(".*T","",dura$soundname)
+
+#Unique name
+dura$name = as.numeric(paste(dura$study, dura$subject, sep = ""))
+dura$name = as.numeric(paste(dura$name, dura$diagnosis, sep = ""))
+
+
+dura$subject = NULL
+dura$study = NULL
+
+#Merging dataframes
+df = merge(pitch,dura, by = "name")
+df = merge(df,demo, by = "name")
+
+#Save it
+write.csv(df, "df.csv")
+
+```
+
+## Now we need to describe our sample
+
+```{r}
+#load df
+df = read.csv("df.csv")
+
+#select only some columns
+df = df %>% select_("Fmean","name","Fsd","Study","nsyll","npause","dur..s.","phonationtime..s.","speechrate..nsyll.dur.","articulation.rate..nsyll...phonationtime.","ASD..speakingtime.nsyll.", "Diagnosis", "Language","Gender","Age", "Education","SANS", "SAPS","VerbalIQ", "NonVerbalIQ")
+
+#lowercase columns
+df = df %>% rename_at(c("Fsd","Study","nsyll","npause","dur..s.","phonationtime..s.","speechrate..nsyll.dur.","articulation.rate..nsyll...phonationtime.","ASD..speakingtime.nsyll.", "Diagnosis", "Language","Gender","Age", "Education","SANS", "SAPS","VerbalIQ", "NonVerbalIQ"),.funs = tolower)
+
+#renmame columns
+df = df %>% rename(duration = dur..s.,speechdur = phonationtime..s., speechrate = speechrate..nsyll.dur.,articulationrate =  articulation.rate..nsyll...phonationtime.,asd = asd..speakingtime.nsyll.)
+```
+
+
+```{r}
+#Split by gender
+dff = filter(df, df$gender == "F")
+dfm = filter(df, df$gender == "M")
+```
+
+
+```{r}
+#Split by study
+dfs1 = filter(df, study == "1")
+dfs2 = filter(df, study == "2")
+dfs3 = filter(df, study == "3")
+dfs4 = filter(df, study == "4")
+dfs5 = filter(df, study == "5")
+dfs6 = filter(df, study == "6")
+```
+
+
+```{r}
+#Number of participants in each study
+length(unique(dfs1$name))
+length(unique(dfs2$name))
+length(unique(dfs3$name))
+length(unique(dfs4$name))
+length(unique(dfs5$name))
+length(unique(dfs6$name))
+```
+
+
+```{r}
+#number of participants diagnosed in each study
+dfs1 %>% dplyr::group_by(name, diagnosis) %>% dplyr::summarize(dplyr::n()) %>% filter(diagnosis == 1) %>% nrow()
+dfs2 %>% dplyr::group_by(name, diagnosis) %>% dplyr::summarize(dplyr::n()) %>% filter(diagnosis == 1) %>% nrow()
+dfs3 %>% dplyr::group_by(name, diagnosis) %>% dplyr::summarize(dplyr::n()) %>% filter(diagnosis == 1) %>% nrow()
+dfs4 %>% dplyr::group_by(name, diagnosis) %>% dplyr::summarize(dplyr::n()) %>% filter(diagnosis == 1) %>% nrow()
+dfs5 %>% dplyr::group_by(name, diagnosis) %>% dplyr::summarize(dplyr::n()) %>% filter(diagnosis == 1) %>% nrow()
+dfs6 %>% dplyr::group_by(name, diagnosis) %>% dplyr::summarize(dplyr::n()) %>% filter(diagnosis == 1) %>% nrow()
+```
+
+
+```{r}
+#number of males in each study
+dfs1 %>% dplyr::group_by(name, gender) %>% dplyr::summarize(dplyr::n()) %>% filter(gender == "M") %>% nrow()
+dfs2 %>% dplyr::group_by(name, gender) %>% dplyr::summarize(dplyr::n()) %>% filter(gender == "M") %>% nrow()
+dfs3 %>% dplyr::group_by(name, gender) %>% dplyr::summarize(dplyr::n()) %>% filter(gender == "M") %>% nrow()
+dfs4 %>% dplyr::group_by(name, gender) %>% dplyr::summarize(dplyr::n()) %>% filter(gender == "M") %>% nrow()
+dfs5 %>% dplyr::group_by(name, gender) %>% dplyr::summarize(dplyr::n()) %>% filter(gender == "M") %>% nrow()
+dfs6 %>% dplyr::group_by(name, gender) %>% dplyr::summarize(dplyr::n()) %>% filter(gender == "M") %>% nrow()
+```
+
+
+
+
+
+
+
+
+
+```{r}
+#getting age, verbalIQ, nonverbalIQ, education, SAPS and SANS scores for every study in the different diagnosis
+
+report = df %>% group_by(study, diagnosis) %>% summarize(meanage = mean(age, na.rm = T), agesd = sd(age, na.rm = T), ciupperage = ci(age, na.rm =T)[3], cilowerage = ci(age, na.rm = T)[2])
+
+report$education = df %>% group_by(study, diagnosis) %>% summarize(meanage = mean(education, na.rm = T), agesd = sd(education, na.rm = T), ciupperage = ci(education, na.rm =T)[3], cilowerage = ci(education, na.rm = T)[2])
+
+report1 = df %>% group_by(study,diagnosis) %>% summarize(meanverbalIQ = mean(verbaliq, na.rm = T), sdverbalIQ = sd(verbaliq, na.rm = T), ciupperverbaliq = ci(verbaliq, na.rm =T)[3], cilowerverbaliq = ci(verbaliq, na.rm = T)[2])
+
+report1$nonverbalIQ = df %>% group_by(study, diagnosis) %>% summarize(meannonverbalIQ = mean(nonverbaliq, na.rm = T), sdnonverbalIQ = sd(nonverbaliq, na.rm = T),ciuppernonverbaliq = ci(nonverbaliq, na.rm =T)[3], cilowernonverbaliq = ci(nonverbaliq, na.rm = T)[2])
+
+report2 = df %>% group_by(study, diagnosis) %>% summarize(meanSANS = mean(sans, na.rm = T), sdSANS = sd(sans, na.rm = T),ciupperSANS = ci(sans, na.rm =T)[3], cilowerSANS = ci(sans, na.rm = T)[2])
+
+report2$SAPS = df %>% group_by(study, diagnosis) %>% summarize(meanSAPS = mean(saps, na.rm = T), sdSAPS = sd(saps, na.rm = T),ciupperSAPS = ci(saps, na.rm =T)[3], cilowerSAPS = ci(saps, na.rm = T)[2])
+
+```
+
+```{r}
+#plots for different austic variables across study and diagnosis:
+
+#Adding pauseduration to dataframe
+df$pausedur = (df$duration-df$speechdur)/(df$npause+1)
+#making diagnosis and study to factors.
+df$diagnosis = as.factor(df$diagnosis)
+df$study = as.factor(df$study)
+
+#getting the summary statistics
+pausedur <- Rmisc::summarySE(df, measurevar="pausedur", groupvars=c("study","diagnosis"))
+arti <- Rmisc::summarySE(df, measurevar="articulationrate", groupvars=c("study","diagnosis"))
+fsd <- Rmisc::summarySE(df, measurevar="fsd", groupvars=c("study","diagnosis"))
+speechdur <- Rmisc::summarySE(df, measurevar="speechdur", groupvars=c("study","diagnosis"))
+fmean <- Rmisc::summarySE(df, measurevar="Fmean", groupvars=c("study","diagnosis"))
+
+#plotting it.
+ggplot(pausedur, aes(x = study, y = pausedur, fill = diagnosis))+geom_bar(position = position_dodge(), stat="identity")+geom_errorbar(aes(ymin=pausedur-ci, ymax = pausedur+ci),position=position_dodge(.9))+ylab("average duration of pauses (s)")
+
+
+ggplot(fmean, aes(x = study, y = Fmean, fill = diagnosis))+geom_bar(position = position_dodge(), stat="identity")+geom_errorbar(aes(ymin=Fmean-ci, ymax = Fmean+ci),position=position_dodge(.9))+ylab("Average pitch (Hz)")
+
+
+ggplot(arti, aes(x = study, y = articulationrate, fill = diagnosis))+geom_bar(position = position_dodge(), stat="identity")+geom_errorbar(aes(ymin=articulationrate-ci, ymax = articulationrate+ci),position=position_dodge(.9))+ylab("articulationrate (syllables per spoken sec)")
+
+
+ggplot(fsd, aes(x = study, y = fsd, fill = diagnosis))+geom_bar(position = position_dodge(), stat="identity")+geom_errorbar(aes(ymin=fsd-ci, ymax = fsd+ci),position=position_dodge(.9))+ylab("standard deviation (pitch)")
+
+
+
+ggplot(speechdur, aes(x = study, y = speechdur, fill = diagnosis))+geom_bar(position = position_dodge(), stat="identity")+geom_errorbar(aes(ymin=speechdur-ci, ymax = speechdur+ci),position=position_dodge(.9))+ylab("speech duration (s)")
+
+```
+
+
+
+
+
+```{r}
+#Danish datafram
+dfdan = df %>% filter(df$language == "Danish")
+dfdan$pausedur = (dfdan$duration-dfdan$speechdur)/(dfdan$npause+1)
+
+
+#Select features from danish study to check correlation
+
+dfselected = dfdan %>%  select_("speechdur","articulationrate","fsd","pausedur")
+dfdancor = Hmisc::rcorr(as.matrix(dfselected))
+dfdancor
+
+#model for our danish data
+mdan = glmer(diagnosis ~ scale(speechdur)+ scale(fsd)+scale(articulationrate)+scale
+           (pausedur)+(1|name), dfdan, family = "binomial")
+summary(mdan)
+
+
+#Model including all four features
+m = glmer(diagnosis ~ scale(speechdur)+scale(fsd)+scale(articulationrate)+scale
+           (pausedur)+(1|name), df, family = "binomial")
+summary(m)
+```
+

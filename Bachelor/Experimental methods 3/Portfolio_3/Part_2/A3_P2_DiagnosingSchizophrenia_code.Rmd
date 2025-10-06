@@ -1,0 +1,874 @@
+---
+title: "Assignment 3 - Part 2 - Diagnosing Schizophrenia from Voice"
+author: "Riccardo Fusaroli"
+date: "October 17, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment 3 - Part 2 - Diagnosing schizophrenia from voice
+
+In the previous part of the assignment you generated a bunch of "features", that is, of quantitative descriptors of voice in schizophrenia. We then looked at whether we could replicate results from the previous literature.
+We now want to know whether we can automatically diagnose schizophrenia from voice only, that is, relying on the set of features you produced last time, we will try to produce an automated classifier.
+Again, remember that the dataset containst 7 studies and 3 languages. Feel free to only include Danish (Study 1-4) if you feel that adds too much complexity.
+
+Issues to be discussed your report:
+- Should you run the analysis on all languages/studies at the same time? 
+- Choose your best acoustic feature from part 1. How well can you diagnose schizophrenia just using it?
+- Identify the best combination of acoustic features to diagnose schizophrenia using logistic regression.
+- Discuss the "classification" process: which methods are you using? Which confounds should you be aware of? What are the strength and limitation of the analysis?
+- Bonus question: Logistic regression is only one of many classification algorithms. Try using others and compare performance. Some examples: Discriminant Function, Random Forest, Support Vector Machine, etc. The package caret provides them. 
+- Bonus Bonus question: It is possible combine the output of multiple  classification models to improve classification accuracy. For inspiration see,
+https://machinelearningmastery.com/machine-learning-ensembles-with-r/
+ The interested reader might also want to look up 'The BigChaos Solution to the Netflix Grand Prize'
+
+## Learning objectives
+- Learn the basics of classification in a machine learning framework
+- Design, fit and report logistic regressions
+- Apply feature selection techniques
+
+### Let's start
+
+We first want to build a logistic regression to see whether you can diagnose schizophrenia from your best acoustic feature. Let's use the full dataset and calculate the different performance measures (accuracy, sensitivity, specificity, PPV, NPV, ROC curve). You need to think carefully as to how we should (or not) use study and subject ID.
+
+Then cross-validate the logistic regression and re-calculate performance on the testing folds. N.B. The cross-validation functions you already have should be tweaked: you need to calculate these new performance measures. Alternatively, the groupdata2 and cvms package created by Ludvig are an easy solution. 
+
+N.B. the predict() function generates log odds (the full scale between minus and plus infinity). Log odds > 0 indicates a choice of 1, below a choice of 0.
+N.N.B. you need to decide whether calculate performance on each single test fold or save all the prediction for test folds in one datase, so to calculate overall performance.
+N.N.N.B. Now you have two levels of structure: subject and study. Should this impact your cross-validation?
+N.N.N.N.B. A more advanced solution could rely on the tidymodels set of packages (warning: Time-consuming to learn as the documentation is sparse, but totally worth it)
+
+
+
+```{r}
+#load packages and data
+pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret,merTools, tidyverse, simr, sjmisc, FinCal, gmodels, pROC, splitstackshape, glmnet, glmmLasso,lmmlasso, REEMtree, groupdata2, e1071, caretEnsemble, tidymodels)
+
+dfsall = read.csv("dfs_all_true.csv")
+```
+
+
+```{r}
+#data preparation and making models
+dfsall$study = as.factor(dfsall$study)
+dfsall$diagnosis = as.factor(dfsall$diagnosis)
+
+dfchi = dfsall %>% filter(dfsall$language == "Chinese")
+dfdan = dfsall %>% filter(dfsall$language == "Danish")
+
+dfchi$pausedur = (dfchi$duration-dfchi$speechdur)/(dfchi$npause+1)
+dfdan$pausedur = (dfdan$duration-dfdan$speechdur)/(dfdan$npause+1)
+
+dfchi = dfchi[!is.na(dfchi$fsd),]
+dfdan = dfdan[!is.na(dfdan$fsd),]
+
+
+#serveral models
+#null model
+mnull= glmer(diagnosis ~ (1|name), dfdan, family = "binomial")
+mnull1 = glmer(diagnosis ~ (1|study), dfdan, family = "binomial")
+summary(mnull)
+#speechdur
+
+mspeechdur = glmer(diagnosis ~ scale(speechdur)+(1|name), dfdan, family = "binomial")
+mspeechdur1 = glmer(diagnosis ~ scale(speechdur)+(1|study), dfdan, family = "binomial")
+#pitch vara
+mfsd = glmer(diagnosis ~ scale(fsd)+(1|name), dfdan, family = "binomial")
+mfsd1 = glmer(diagnosis ~ scale(fsd)+(1|study), dfdan, family = "binomial")
+#articulationrate
+marti = glmer(diagnosis ~ scale(articulationrate)+(1|name), dfdan, family = "binomial")
+marti1 = glmer(diagnosis ~ scale(articulationrate)+(1|study), dfdan, family = "binomial")
+
+#pausedur
+mpausedur = glmer(diagnosis ~ scale(pausedur)+(1|name), dfdan, family = "binomial")
+mpausedur1 = glmer(diagnosis ~ scale(pausedur)+(1|study), dfdan, family = "binomial")
+summary(mpausedur)
+#full model for our danish data
+mfull = glmer(diagnosis ~ scale(speechdur)+ scale(fsd)+scale(articulationrate)+scale
+           (pausedur)+(1|name), dfdan, family = "binomial")
+mfull1 = glmer(diagnosis ~ scale(speechdur)+ scale(fsd)+scale(articulationrate)+scale
+           (pausedur)+(1|study), dfdan, family = "binomial")
+
+#summary
+summary(mfsd)
+summary(mfsd1)
+
+#model comparison
+anova(mnull, mspeechdur, mfsd,marti,mpausedur)
+anova(mnull1, mspeechdur1, mfsd1,marti1,mpausedur1)
+```
+
+
+```{r}
+#making function for a confusion matrix
+confusion = function(model){
+predicted = as.data.frame(predict(model, dfdan, allow.new.levels = T, re.form = NA))
+predicted$actual = dfdan$diagnosis
+predicted$predict = ifelse(predicted$`predict(model, dfdan, allow.new.levels = T, re.form = NA)`> 0, 1, 0)
+predicted$predict = as.factor(predicted$predict)
+predicted$actual = as.numeric(predicted$actual)
+predicted$actual = as.factor(predicted$actual-1)
+
+q = confusionMatrix(predicted$predict, predicted$actual, positive ="1")
+q
+}
+
+confusion(mfsd)
+confusion(mfsd1)
+
+#making a ROC curve
+
+dfdan$name = as.factor(dfdan$name)
+dfdan$diagnosis = as.factor(dfdan$diagnosis)
+par(pty = "s")
+
+l = roc(dfdan$diagnosis, predict(mfsd1, dfdan,type = 'response', allow.new.levels = T,na.action = na.pass), plot = T, legacy.axes = T, percent = T, xlab = "False positive procentage", ylab = "True positive percentage", title = "ROC for pitch varability")
+
+
+
+#colecting the data in one dataframe
+data = data.frame(l$sensitivities, l$specificities, l$thresholds)
+data = data.frame(l$auc)
+data = cbind(data, t(q$byClass))
+```
+
+
+```{r}
+#function for scaled variables, that is scaled training set and scaled test set based on the training set.
+scaltest= function(train,test){
+  p = preProcess(train, method = c("center", "scale"))
+  pp = predict(p, train)
+  qq = predict(p, test)
+
+  pp = pp %>% dplyr::select(speechdur, pausedur, fsd, articulationrate)
+  qq = qq %>% dplyr::select(speechdur, pausedur, fsd, articulationrate)
+  pp = pp %>% rename(scalespeech = speechdur, scalepause = pausedur, scalefsd = fsd, arti = articulationrate)
+  qq = qq %>% rename(scalespeech = speechdur, scalepause = pausedur, scalefsd = fsd, arti = articulationrate)
+  pp$.folds = NULL
+  qq$.folds = NULL
+test = cbind(qq, test)  
+}
+
+scaltrain= function(train,test){
+  p = preProcess(train, method = c("center", "scale"))
+  pp = predict(p, train)
+  qq = predict(p, test)
+
+  pp = pp %>% dplyr::select(speechdur, pausedur, fsd, articulationrate)
+  qq = qq %>% dplyr::select(speechdur, pausedur, fsd, articulationrate)
+  pp = pp %>% rename(scalespeech = speechdur, scalepause = pausedur, scalefsd = fsd, arti = articulationrate)
+  qq = qq %>% rename(scalespeech = speechdur, scalepause = pausedur, scalefsd = fsd, arti = articulationrate)
+  pp$.folds = NULL
+  qq$.folds = NULL
+train = cbind(pp, train)
+}
+
+#function for confidence interval
+confi = function(mean, sd){
+  upper = mean+1.96*sd/(sqrt(10))
+  lower = mean-1.96*sd/(sqrt(10))
+
+ci = cbind(upper, lower)
+  }
+
+
+```
+
+
+```{r}
+#cross validating the 1 feature model
+dfdan$name = as.factor(dfdan$name)
+dfdan$name = as.integer(dfdan$name)
+
+k=10
+data = as.data.frame(NULL)
+sdata = NULL
+
+dfdan$name = as.factor(dfdan$name)
+
+dfdan = fold(dfdan, k = k, cat_col = "diagnosis", id_col = "name") %>% arrange(.folds)
+
+dfdan$diagnosis = as.numeric(dfdan$diagnosis)
+dfdan$diagnosis = dfdan$diagnosis-1
+dfdan$diagnosis = as.factor(dfdan$diagnosis)
+
+dfdan$.folds = as.numeric(dfdan$.folds)
+
+
+for (i in 1:k){
+  train = subset(dfdan, !(dfdan$.folds %in% i))
+  test = subset(dfdan, dfdan$.folds %in% i)
+  
+test =  scaltest(train, test)
+train =   scaltrain(train, test)  
+  
+mfull1 = glmer(diagnosis ~ scalefsd+(1|study), train, family = "binomial")
+
+  pred_df = as.data.frame(lme4:::predict.merMod(mfull1, test, allow.new.levels = T))
+  pred_df$pred = pred_df$`lme4:::predict.merMod(mfull1, test, allow.new.levels = T)`
+  pred_df$`predict(mfull1, test, allow.new.levels = T)` = NULL
+  pred_df$actual = as.factor(test$diagnosis)
+
+pred_df$predict = ifelse(pred_df$pred > 0, 1, 0)
+pred_df$predict = as.factor(pred_df$predict)
+
+q = confusionMatrix(pred_df$predict, pred_df$actual, positive ="1")
+q
+
+l = roc(test$diagnosis, predict(mfull1, test,type = 'response', allow.new.levels = T,na.action = na.pass), plot = T)
+
+data = data.frame(l$auc, t(q$byClass), q$overall[2])
+
+sdata = rbind(data, sdata)
+  
+}
+
+colMeans(sdata)
+
+t.test(sdata$l.auc ,mu = 0.5)
+
+
+pp = sdata %>% summarize_all(list(mean = mean,sd = sd))
+
+
+aucconfi = confi(pp$l.auc_mean, pp$l.auc_sd)
+senconfi = confi(pp$Sensitivity_mean, pp$Sensitivity_sd)
+speconfi = confi(pp$Specificity_mean, pp$Specificity_sd)
+auccconfi = confi(pp$Balanced.Accuracy_mean, pp$Balanced.Accuracy_sd)
+kapconfi = confi(pp$q.overall.2._mean, pp$q.overall.2._sd)
+NEGconfi = confi(pp$Neg.Pred.Value_mean, pp$Neg.Pred.Value_sd)
+POSconfi = confi(pp$Pos.Pred.Value_mean, pp$Pos.Pred.Value_sd)
+
+
+
+```
+
+
+
+
+
+```{r}
+#cross validating the full model
+dfdan$name = as.factor(dfdan$name)
+dfdan$name = as.integer(dfdan$name)
+
+k=10
+data = as.data.frame(NULL)
+data2 = NULL
+
+dfdan$name = as.factor(dfdan$name)
+
+dfdan = fold(dfdan, k = k, cat_col = "diagnosis", id_col = "name") %>% arrange(.folds)
+
+dfdan$diagnosis = as.numeric(dfdan$diagnosis)
+dfdan$diagnosis = dfdan$diagnosis-1
+dfdan$diagnosis = as.factor(dfdan$diagnosis)
+
+dfdan$.folds = as.numeric(dfdan$.folds)
+
+
+for (i in 1:k){
+  train = subset(dfdan, !(dfdan$.folds %in% i))
+  test = subset(dfdan, dfdan$.folds %in% i)
+  
+test =  scaltest(train, test)
+train =   scaltrain(train, test)  
+  
+mfull1 = glmer(diagnosis ~ arti+scalespeech+ scalefsd+scalepause+(1|study), train, family = "binomial")
+
+  pred_df = as.data.frame(lme4:::predict.merMod(mfull1, test, allow.new.levels = T))
+  pred_df$pred = pred_df$`lme4:::predict.merMod(mfull1, test, allow.new.levels = T)`
+  pred_df$`predict(mfull1, test, allow.new.levels = T)` = NULL
+  pred_df$actual = as.factor(test$diagnosis)
+
+pred_df$predict = ifelse(pred_df$pred > 0, 1, 0)
+pred_df$predict = as.factor(pred_df$predict)
+
+q = confusionMatrix(pred_df$predict, pred_df$actual, positive ="1")
+q
+
+l = roc(test$diagnosis, predict(mfull1, test,type = 'response', allow.new.levels = T,na.action = na.pass), plot = T)
+
+data = data.frame(l$auc, t(q$byClass), q$overall[2])
+
+data2 = rbind(data, data2)
+  
+}
+colMeans(data2)
+
+t.test(data2$l.auc ,mu = 0.5)
+
+
+pp = data2 %>% summarize_all(list(mean = mean,sd = sd))
+
+
+aucconfi = confi(pp$l.auc_mean, pp$l.auc_sd)
+senconfi = confi(pp$Sensitivity_mean, pp$Sensitivity_sd)
+speconfi = confi(pp$Specificity_mean, pp$Specificity_sd)
+auccconfi = confi(pp$Balanced.Accuracy_mean, pp$Balanced.Accuracy_sd)
+kapconfi = confi(pp$q.overall.2._mean, pp$q.overall.2._sd)
+
+
+```
+
+
+
+
+```{r}
+#glmnet
+
+dflas = dfdan %>% dplyr::select(diagnosis, pausedur, articulationrate, speechdur, fsd)
+dflas = as.data.frame(dflas)
+lambda <- 10^seq(-3, 3, length = 100)
+
+
+
+
+
+k=10
+data = as.data.frame(NULL)
+data3 = NULL
+
+
+for (i in 1:k){
+  train = subset(dflas, !(dflas$.folds %in% i))
+  test = subset(dflas, dflas$.folds %in% i)
+  
+   train$.folds = NULL
+   test$.folds = NULL
+  
+
+#ridge
+ridge <- train(
+  diagnosis ~., data = train, method = "glmnet",
+  trControl = trainControl("repeatedcv", number = 10, repeats = 3),
+  tuneGrid = expand.grid(alpha = 0, lambda = lambda), preProcess=c("scale","center")
+  )
+  pred_df = data.frame(predict(ridge, newdata = test, allow.new.levels = T))
+  pred_df$pred = pred_df$predict.ridge..newdata...test..allow.new.levels...T.
+  pred_df$`predict(mfull1, test, allow.new.levels = T)` = NULL
+  pred_df$actual = as.factor(test$diagnosis)
+pred_df$predict = as.factor(pred_df$predict)
+
+q = confusionMatrix(pred_df$predict, pred_df$actual, positive ="1")
+q
+
+pred_df$predict = as.numeric(pred_df$predict)
+l = roc(pred_df$actual, pred_df$predict, plot = T)
+
+data = data.frame(l$auc, t(q$byClass), q$overall[2])
+
+data3 = rbind(data, data3)
+  
+}
+
+colMeans(data3)
+
+t.test(data3$l.auc, mu = 0.5)
+
+
+pp = data3 %>% summarize_all(list(mean = mean,sd = sd))
+
+
+aucconfi = confi(pp$l.auc_mean, pp$l.auc_sd)
+senconfi = confi(pp$Sensitivity_mean, pp$Sensitivity_sd)
+speconfi = confi(pp$Specificity_mean, pp$Specificity_sd)
+auccconfi = confi(pp$Balanced.Accuracy_mean, pp$Balanced.Accuracy_sd)
+kapconfi = confi(pp$q.overall.2._mean, pp$q.overall.2._sd)
+
+
+
+```
+
+
+
+
+```{r}
+#model correlation matrix
+
+c = dfdan %>% dplyr::select(fsd, articulationrate, pausedur, speechdur)
+c = c %>% rename(pitch_varability = fsd)
+c$.folds = NULL
+
+cor(c)
+
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+#lasso
+
+data = as.data.frame(NULL)
+data4 = NULL
+
+
+for (i in 1:k){
+  train = subset(dflas, !(dflas$.folds %in% i))
+  test = subset(dflas, dflas$.folds %in% i)
+  
+   train$.folds = NULL
+   test$.folds = NULL
+  
+
+lasso <- train(
+  diagnosis ~., data = trainlas, method = "glmnet",
+  trControl = trainControl("repeatedcv", number = 10, repeats = 3),
+  tuneGrid = expand.grid(alpha = 1, lambda = lambda), preProcess=c("scale","center")
+  )
+
+  pred_df = data.frame(predict(lasso, newdata = test, allow.new.levels = T))
+  pred_df$pred = pred_df$predict.lasso..newdata...test..allow.new.levels...T.
+  pred_df$`predict(mfull1, test, allow.new.levels = T)` = NULL
+  pred_df$actual = as.factor(test$diagnosis)
+pred_df$predict = as.factor(pred_df$predict)
+
+q = confusionMatrix(pred_df$predict, pred_df$actual, positive ="1")
+q
+
+pred_df$predict = as.numeric(pred_df$predict)
+l = roc(pred_df$actual, pred_df$predict, plot = T)
+
+data = data.frame(l$auc, t(q$byClass), q$overall[2])
+
+data4 = rbind(data, data4)
+  
+}
+
+colMeans(data4)
+t.test(data4$l.auc, mu = 0.5)
+
+```
+
+
+
+```{r}
+#elastic
+
+data = as.data.frame(NULL)
+data5 = NULL
+
+
+for (i in 1:k){
+  train = subset(dflas, !(dflas$.folds %in% i))
+  test = subset(dflas, dflas$.folds %in% i)
+  
+   train$.folds = NULL
+   test$.folds = NULL
+  
+
+
+
+elastic <- train(
+  diagnosis ~., data = trainlas, method = "glmnet",
+  trControl = trainControl("repeatedcv", number = 10),
+  tuneLength = 10,preProcess=c("scale","center")
+  )
+
+  pred_df = data.frame(predict(elastic, newdata = test, allow.new.levels = T))
+  pred_df$pred = pred_df$predict.elastic..newdata...test..allow.new.levels...T.
+  pred_df$`predict(mfull1, test, allow.new.levels = T)` = NULL
+  pred_df$actual = as.factor(test$diagnosis)
+pred_df$predict = as.factor(pred_df$predict)
+
+q = confusionMatrix(pred_df$predict, pred_df$actual, positive ="1")
+q
+
+pred_df$predict = as.numeric(pred_df$predict)
+l = roc(pred_df$actual, pred_df$predict, plot = T)
+
+data = data.frame(l$auc, t(q$byClass), q$overall[2])
+
+data5 = rbind(data, data5)
+  
+}
+
+colMeans(data5)
+t.test(data5$l.auc, mu = 0.5)
+
+
+
+pp = data5 %>% summarize_all(list(mean = mean,sd = sd))
+
+
+aucconfi = confi(pp$l.auc_mean, pp$l.auc_sd)
+senconfi = confi(pp$Sensitivity_mean, pp$Sensitivity_sd)
+speconfi = confi(pp$Specificity_mean, pp$Specificity_sd)
+auccconfi = confi(pp$Balanced.Accuracy_mean, pp$Balanced.Accuracy_sd)
+kapconfi = confi(pp$q.overall.2._mean, pp$q.overall.2._sd)
+
+
+
+
+```
+
+
+
+```{r}
+#normal glm
+
+data = as.data.frame(NULL)
+data6 = NULL
+
+
+for (i in 1:k){
+  train = subset(dflas, !(dflas$.folds %in% i))
+  test = subset(dflas, dflas$.folds %in% i)
+  
+   train$.folds = NULL
+   test$.folds = NULL
+  
+
+
+
+glm <- train(
+  diagnosis ~., data = trainlas, method = "glm",
+  trControl = trainControl("repeatedcv", number = 10),
+  tuneLength = 10,preProcess=c("scale","center")
+  )
+
+  pred_df = data.frame(predict(glm, newdata = test, allow.new.levels = T))
+  pred_df$pred = pred_df$predict.glm..newdata...test..allow.new.levels...T.
+  pred_df$`predict(mfull1, test, allow.new.levels = T)` = NULL
+  pred_df$actual = as.factor(test$diagnosis)
+pred_df$predict = as.factor(pred_df$predict)
+
+q = confusionMatrix(pred_df$predict, pred_df$actual, positive ="1")
+q
+
+pred_df$predict = as.numeric(pred_df$predict)
+l = roc(pred_df$actual, pred_df$predict, plot = T)
+
+data = data.frame(l$auc, t(q$byClass), q$overall[2])
+
+data6 = rbind(data, data6)
+  
+}
+
+colMeans(data6)
+t.test(data6$l.auc, mu = 0.5)
+
+
+pp = data6 %>% summarize_all(list(mean = mean,sd = sd))
+
+
+aucconfi = confi(pp$l.auc_mean, pp$l.auc_sd)
+senconfi = confi(pp$Sensitivity_mean, pp$Sensitivity_sd)
+speconfi = confi(pp$Specificity_mean, pp$Specificity_sd)
+auccconfi = confi(pp$Balanced.Accuracy_mean, pp$Balanced.Accuracy_sd)
+kapconfi = confi(pp$q.overall.2._mean, pp$q.overall.2._sd)
+
+
+
+```
+
+
+
+```{r}
+#randomforest.
+
+dfrandom = dfdan %>% dplyr::select("diagnosis", "speechdur", "fsd", "pausedur", "articulationrate", "study")
+dfrandom = ungroup(dfrandom)
+dfrandom$.folds = NULL
+str(dfrandom)
+
+dfrandom = as.data.frame(dfrandom)
+
+dfrandom$diagnosis = as.numeric(dfrandom$diagnosis)
+forest = REEMtree(diagnosis ~ scale(speechdur)+ scale(fsd), data = dfrandom, random=~1|study)
+
+
+predicted = as.data.frame(predict.REEMtree(forest, dfdan, id =dfdan$study))
+predicted$actual = as.factor(dfdan$diagnosis)
+
+
+random_forrest = roc(predicted$actual, predicted$`predict.REEMtree(forest, dfdan, id = dfdan$study)`, allow.new.levels = T, na.action = na.pass, plot = T)
+
+
+
+
+
+
+
+
+#cross validate
+str(dfdan$name)
+dfdan$name = as.factor(dfdan$name)
+dfdan$name = as.integer(dfdan$name)
+
+
+rdata = as.data.frame(NULL)
+rdata2 = NULL
+
+
+dfrandom$name = dfdan$name
+
+dfrandom$name = as.factor(dfrandom$name)
+
+dfrandom = fold(dfrandom, k = k, cat_col = "diagnosis", id_col = "name") %>% arrange(.folds)
+
+dfrandom$.folds = as.numeric(dfrandom$.folds)
+
+
+for (i in 1:k){
+  train = subset(dfrandom, !(dfrandom$.folds %in% i))
+  test = subset(dfrandom, dfrandom$.folds %in% i)
+  
+train = as.data.frame(train)
+test = as.data.frame(test)
+forest = REEMtree(diagnosis ~ scale(speechdur)+ scale(fsd)+scale(articulationrate)+scale(pausedur), data = train, random=~1|study)
+
+
+prep = predicted = as.data.frame(predict.REEMtree(forest, test, id =test$study))
+
+prep = prep %>% rename(predicted = `predict.REEMtree(forest, test, id = test$study)`)
+
+prep$actual = as.factor(test$diagnosis-1)
+
+  
+
+random_forrest = roc(prep$actual, prep$predicted, allow.new.levels = T, na.action = na.pass, plot = T)
+
+
+rdata = data.frame(random_forrest$auc)
+
+rdata2 = rbind(rdata, rdata2)
+  
+   i = i+1
+}
+
+mean(rdata2$random_forrest.auc)
+
+t.test(rdata2$random_forrest.auc, mu = 0.5)
+
+
+```
+
+
+```{r}
+#ML with caret and ensemble models.
+caretdata = dfdan %>% dplyr::select(diagnosis, pausedur, articulationrate, speechdur, fsd)
+
+caretdata = ungroup(caretdata)
+caretdata$.folds = NULL
+caretdata$diagnosis = as.numeric(caretdata$diagnosis)
+caretdata$diagnosis = caretdata$diagnosis-1
+caretdata$diagnosis = as.factor(caretdata$diagnosis)
+caretdata$diagnosis = ifelse(caretdata$diagnosis == 1, "sci", "control")
+
+
+#making a importance of scores
+caretd = as.data.frame(caretdata)
+caretd$diagnosis = as.factor(caretd$diagnosis)
+#Cross validation:
+control <- trainControl(method="repeatedcv", number=10)
+# train the model
+model <- train(diagnosis~., data=caretd, method="lvq", preProcess=c("scale", "center"), trControl=control)
+# estimate variable importance
+importance <- varImp(model, scale = FALSE)
+# summarize importance
+print(importance)
+# plot importance
+plot(importance)
+```
+
+
+```{r}
+#making several models:
+control <- trainControl(method="repeatedcv", number=10, savePredictions=TRUE, classProbs=TRUE)
+#5 different models:
+#methods used Linear Discriminate Analysis (LDA)
+#Classification and Regression Trees (CART)
+#Logistic Regression (via Generalized Linear Model or GLM)
+#k-Nearest Neighbors (kNN)
+#Support Vector Machine with a Radial Basis Kernel Function (SVM)
+
+algorithmList <- c('lda', 'rpart', 'glm', 'knn', 'svmRadial')
+
+models <- caretList(diagnosis~., data=caretdata, trControl=control, methodList=algorithmList, preProcess=c("scale","center"))
+
+results <- resamples(models)
+summary(results)
+dotplot(results)
+
+qq = results$values
+
+f = function(x){
+  
+  mean = mean(x)
+  data = data.frame(confi(mean(x),sd(x)))
+  data = cbind(mean,data)
+}
+
+
+
+
+u = f(qq$`lda~Accuracy`)
+u = f(qq$`lda~Kappa`)
+
+u = f(qq$`rpart~Accuracy`)
+u = f(qq$`rpart~Kappa`)
+
+u = f(qq$`knn~Accuracy`)
+u = f(qq$`knn~Kappa`)
+
+u = f(qq$`svmRadial~Accuracy`)
+u = f(qq$`svmRadial~Kappa`)
+
+
+```
+
+
+```{r}
+#making several models:
+
+control <- trainControl(method="repeatedcv", number=10, savePredictions=TRUE, classProbs=TRUE, summaryFunction=twoClassSummary)
+#5 different models:
+#methods used Linear Discriminate Analysis (LDA)
+#Classification and Regression Trees (CART)
+#Logistic Regression (via Generalized Linear Model or GLM)
+#k-Nearest Neighbors (kNN)
+#Support Vector Machine with a Radial Basis Kernel Function (SVM)
+
+algorithmList <- c('lda', 'rpart', 'glm', 'knn', 'svmRadial')
+
+models <- caretList(diagnosis~., data=caretdata, trControl=control, methodList=algorithmList, preProcess=c("scale","center"), metric = "ROC")
+
+results <- resamples(models)
+summary(results)
+dotplot(results)
+
+qq = results$values
+
+
+
+
+
+u = f(qq$`lda~ROC`)
+u = f(qq$`lda~Sens`)
+u = f(qq$`lda~Spec`)
+t.test(qq$`lda~ROC`, mu=0.5)
+
+u = f(qq$`rpart~ROC`)
+u = f(qq$`rpart~Sens`)
+u = f(qq$`rpart~Spec`)
+t.test(qq$`rpart~ROC`, mu=0.5)
+
+
+u = f(qq$`knn~ROC`)
+u = f(qq$`knn~Sens`)
+u = f(qq$`knn~Spec`)
+t.test(qq$`knn~ROC`, mu=0.5)
+
+
+u=f(qq$`svmRadial~ROC`)
+u=f(qq$`svmRadial~Sens`)
+u=f(qq$`svmRadial~Spec`)
+t.test(qq$`svmRadial~ROC`, mu=0.5)
+
+# correlation between results
+modelCor(results)
+#IDA and Glm are highly correlated so only one is included.
+
+algorithmList <- c('rpart', 'glm', 'knn', 'svmRadial')
+
+models <- caretList(diagnosis~., data=caretdata, trControl=control, methodList=algorithmList)
+
+results <- resamples(models)
+
+dotplot(results)
+# correlation between results
+modelCor(results)
+
+algorithmList1 <- c('rpart', 'knn', 'svmRadial')
+
+models1 <- caretList(diagnosis~., data=caretdata, trControl=control, methodList=algorithmList1)
+
+control <- trainControl(method="repeatedcv", number=10, savePredictions=TRUE, classProbs=TRUE)
+
+# stack using glm
+stackControl <- trainControl(method="repeatedcv", number=10, savePredictions=TRUE, classProbs=TRUE)
+
+
+stack.glm1 <- caretStack(models1, method="glm", metric="Accuracy", trControl=stackControl)
+
+print(stack.glm1)
+
+stack.svm <- caretStack(models1, method="svmRadial", metric="Accuracy", trControl=stackControl)
+print(stack.svm)
+
+stack.svm$models$svmRadial$results
+aa = stack.svm$ens_model$results
+
+z = confi(aa$Accuracy[1],aa$AccuracySD[1])
+z = confi(aa$Kappa[1],aa$KappaSD[1])
+
+```
+
+
+
+
+```{r}
+#stack with ROC
+control <- trainControl(method="repeatedcv", number=10, savePredictions=TRUE, classProbs=TRUE, summaryFunction=twoClassSummary)
+
+
+algorithmList1 <- c('rpart', 'knn', 'svmRadial')
+
+models1 <- caretList(diagnosis~., data=caretdata, trControl=control, methodList=algorithmList1)
+
+control <- trainControl(method="repeatedcv", number=10, savePredictions=TRUE, classProbs=TRUE)
+
+# stack using glm
+stackControl <- trainControl(method="repeatedcv", number=10, savePredictions=TRUE, classProbs=TRUE, summaryFunction=twoClassSummary)
+
+
+stack.svm <- caretStack(models1, method="svmRadial", metric="ROC", trControl=stackControl)
+print(stack.svm)
+
+
+stack.svm <- caretStack(models1, method="svmRadial", metric="ROC", trControl=stackControl)
+print(stack.svm)
+
+stack.svm$ens_model$results
+
+aa = stack.svm$ens_model$results
+
+z = confi(aa$Sens[1],aa$SensSD[1])
+z = confi(aa$Spec[1],aa$SpecSD[1])
+z = confi(aa$ROC[1],aa$ROCSD[1])
+
+
+t.test2 <- function(m1,m2,s1,s2,n1,n2,m0=0,equal.variance=FALSE)
+{
+    if( equal.variance==FALSE ) 
+    {
+        se <- sqrt( (s1^2/n1) + (s2^2/n2) )
+        # welch-satterthwaite df
+        df <- ( (s1^2/n1 + s2^2/n2)^2 )/( (s1^2/n1)^2/(n1-1) + (s2^2/n2)^2/(n2-1) )
+    } else
+    {
+        # pooled standard deviation, scaled by the sample sizes
+        se <- sqrt( (1/n1 + 1/n2) * ((n1-1)*s1^2 + (n2-1)*s2^2)/(n1+n2-2) ) 
+        df <- n1+n2-2
+    }      
+    t <- (m1-m2-m0)/se 
+    dat <- c(m1-m2, se, t, 2*pt(-abs(t),df))    
+    names(dat) <- c("Difference of means", "Std Error", "t", "p-value")
+    return(dat) 
+}
+
+m2 = 0.5
+
+t.test2(aa$ROC[1], m2, aa$ROCSD[1], 0, 10, 10)
+```

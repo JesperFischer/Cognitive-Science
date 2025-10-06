@@ -1,0 +1,179 @@
+---
+title: "Assignment 5 - Meta-analysis of pitch in schizophrenia"
+author: "Astrid, Daniel, Jesper and Pernille KJ"
+date: "3/7/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Building on the shoulders of giants: meta-analysis
+
+## Questions to be answered
+
+1. What is the current evidence for distinctive vocal patterns in schizophrenia? Report how many papers report quantitative estimates, comment on what percentage of the overall studies reviewed they represent (see PRISMA chart) your method to analyze them, the estimated effect size of the difference (mean effect size and standard error) and forest plots representing it. N.B. Only measures of pitch mean and pitch sd are required for the assignment (all the other measures have been removed from the dataset for the sake of simplicity). 
+
+2. Do the results match your own analysis from Assignment 3? If you add your results to the meta-analysis, do the estimated effect sizes change? Report the new estimates and the new forest plots.
+
+3. Assess the quality of the literature: report and comment on heterogeneity of the studies (tau, I2), on publication bias (funnel plot), and on influential studies.
+
+## Tips on the process to follow:
+
+- Download the data on all published articles analyzing voice in schizophrenia and the prisma chart as reference of all articles found and reviewed
+Data: https://www.dropbox.com/s/0l9ur0gaabr80a8/Matrix_MetaAnalysis_Diagnosis_updated290719.xlsx?dl=0
+Prisma chart: https://www.dropbox.com/s/vbjf6ff73dv9tru/PRISMA%202009%20flow%20diagram_PP.pptx?dl=0 
+- Look through the dataset to find out which columns to use, and if there is any additional information written as comments (real world data is always messy!).
+    * Hint: PITCH_F0M and PITCH_F0SD group of variables are what you need
+- Following the procedure in the slides calculate effect size and standard error of the effect size per each study. N.B. we focus on pitch mean and pitch standard deviation.
+ . first try using lmer (to connect to what you know of mixed effects models)
+ . then use rma() (to get some juicy additional statistics)
+
+- Build a forest plot of the results (forest(model))
+ 
+- Go back to Assignment 3, add your own study to the data table, and re-run meta-analysis. Do the results change?
+
+- Now look at the output of rma() and check tau and I2
+
+
+
+```{r}
+pacman::p_load(readxl, tidyverse, metafor, lme4, lmerTest)
+df <- read_excel("Matrix_MetaAnalysis_Diagnosis_updated290719.xlsx")
+
+#Mean of pitch and relevant data
+df1 = df %>% select(PITCH_F0_SZ_M, PITCH_F0_HC_M, PITCH_F0_SZ_SD,PITCH_F0_HC_SD, ArticleID, StudyID, DIAGNOSIS,SAMPLE_SIZE_HC, SAMPLE_SIZE_SZ, TYPE_OF_TASK)
+
+#Pitch variability and relevant data
+df2 = df %>% select(PITCH_F0SD_HC_SD,PITCH_F0SD_HC_M,PITCH_F0SD_SZ_SD, PITCH_F0SD_SZ_M, ArticleID, StudyID, DIAGNOSIS, SAMPLE_SIZE_HC, SAMPLE_SIZE_SZ, TYPE_OF_TASK)
+
+df1 = na.omit(df1)
+df2 = na.omit(df2)
+
+#Standardized mean differences (Effect size measure)
+pitch = escalc(measure = 'SMD',
+               n1i=SAMPLE_SIZE_SZ,
+               n2i=SAMPLE_SIZE_HC,
+               m1i=PITCH_F0_SZ_M,
+               m2i=PITCH_F0_HC_M,
+               sd1i=PITCH_F0_SZ_SD,
+               sd2i=PITCH_F0_HC_SD,
+               data = df1)
+
+pitchvar = escalc(measure = 'SMD',
+               n1i=SAMPLE_SIZE_SZ,
+               n2i=SAMPLE_SIZE_HC,
+               m1i=PITCH_F0SD_SZ_M,
+               m2i=PITCH_F0SD_HC_M,
+               sd1i=PITCH_F0SD_SZ_SD,
+               sd2i=PITCH_F0SD_HC_SD,
+               data = df2)
+?escalc()
+#Change to factor
+pitch = pitch %>% mutate(
+  DIAGNOSIS = as.factor(DIAGNOSIS),
+  StudyID = as.factor(StudyID),
+  TYPE_OF_TASK = as.factor(TYPE_OF_TASK)
+)
+
+pitchvar = pitchvar %>% mutate(
+  DIAGNOSIS = as.factor(DIAGNOSIS),
+  StudyID = as.factor(StudyID),
+  TYPE_OF_TASK = as.factor(TYPE_OF_TASK)
+)
+
+#Boxplot
+ggplot(pitch, aes(TYPE_OF_TASK, yi, col = TYPE_OF_TASK)) + geom_boxplot()+ggtitle("Mean Pitch model")+labs(y = "mean standardized diffence(SMD)", x = "Type of task")
+
+ggplot(pitchvar, aes(TYPE_OF_TASK, yi, col = TYPE_OF_TASK)) + geom_boxplot()+ggtitle(" Pitch varability model")+labs(y = "mean standardized diffence(SMD)", x = "Type of task")
+
+
+#outliter in Pitchvariability data, really low standard deviation for the HC in pitch variability, 0.05 and for SZ it is 0.2, however if they were both 0.2 still very high effect size due to the very low variation in general
+
+#Remove the outlier we decided not to do this
+#pitchvar = pitchvar[-6,]
+
+
+```
+
+
+```{r}
+#linear models.
+#Pitch
+m <- lmerTest::lmer(yi ~ 1 + (1 | StudyID), weights = 1/vi, data=pitch, control=lmerControl(check.nobs.vs.nlev="ignore", check.nobs.vs.nRE="ignore"))
+summary(m)
+#Pitch variability
+mv <- lmerTest::lmer(yi ~ 1 + (1 | StudyID), weights = 1/vi, data=pitchvar, control=lmerControl(check.nobs.vs.nlev="ignore", check.nobs.vs.nRE="ignore"))
+summary(mv)
+
+
+#Pitch + Task as fixed
+m1 <- lmerTest::lmer(yi ~ TYPE_OF_TASK + (1 | StudyID), weights = 1/vi, data=pitch, control=lmerControl(check.nobs.vs.nlev="ignore", check.nobs.vs.nRE="ignore"))
+
+summary(m1)
+
+#Pitch variablity + Task as fixed
+m1v <- lmerTest::lmer(yi ~ TYPE_OF_TASK + (1 | StudyID), weights = 1/vi, data=pitchvar, control=lmerControl(check.nobs.vs.nlev="ignore", check.nobs.vs.nRE="ignore"))
+
+summary(m1v)
+
+
+
+```
+
+```{r}
+# random-effects model analysis (meta)
+?rma()
+m = rma(yi,vi, data = pitch, slab = StudyID)
+mv = rma(yi,vi, data = pitchvar, slab = StudyID)
+
+summary(m)
+summary(mv)
+
+#Including task
+mt = rma(yi,vi, data = pitch, mods = cbind(TYPE_OF_TASK), slab = StudyID)
+mvt = rma(yi,vi, data = pitchvar, mods = cbind(TYPE_OF_TASK), slab = StudyID)
+
+```
+
+
+```{r}
+#forrest plots and funnel plots.
+forest(m)
+forest(mv)
+
+funnel(m)
+funnel(mv)
+```
+
+
+
+
+```{r}
+#From assignment3. Our own analysis and findings for pitch variability
+pitchvar1 = pitchvar[1,]
+
+for (i in colnames(pitchvar1)) pitchvar1[i] = "NA"
+
+
+pitchvar1$yi = -0.19
+pitchvar1$vi = 0.36
+pitchvar1$TYPE_OF_TASK = "FREE"
+pitchvar1$StudyID = 100
+
+pitchvar = rbind(pitchvar1,pitchvar)
+
+#New random-effects model
+mv1 = rma(yi,vi, data = pitchvar, slab = StudyID)
+
+```
+
+
+```{r}
+#influence plots
+plot(influence(m))
+plot(influence(mv))
+
+```
+

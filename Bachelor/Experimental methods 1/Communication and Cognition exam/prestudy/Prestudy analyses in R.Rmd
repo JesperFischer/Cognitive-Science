@@ -1,0 +1,200 @@
+---
+title: "Perception of pain analyses"
+author: "Daniel Elmstrom Christensen"
+date: "05/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(data.table)
+library(lme4)
+library(sjstats)
+library(pwr)
+library(RColorBrewer)
+library(car)
+library(jtools) 
+library(ggstance)
+library(sjPlot)
+library(sjlabelled)
+library(sjmisc)
+library(multcomp)
+
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#Load data
+files <- list.files(path = "logfile", pattern = "logfile.csv", full.names = T)
+#Making a dataframe from the loaded data
+data <- lapply(files, read_csv) %>% plyr::rbind.fill()
+#Save in folder
+write.csv(data, "data.csv")
+
+
+newdata <- read.csv("data.csv")
+data$X1 <- NULL
+
+
+
+library(readxl)
+data <- read_excel("C:/Users/Jespe/OneDrive/Skrivebord/1st - CogCom Exam/data for 43 participants.xlsx")
+
+data2 = read.csv("C:/Users/Jespe/OneDrive/Skrivebord/1st - CogCom Exam/Cognition and communication exam/logfile/49_klaus lundby kristiansen_logfile.csv")
+data3 = read.csv("C:/Users/Jespe/OneDrive/Skrivebord/1st - CogCom Exam/Cognition and communication exam/logfile/50_Mette_logfile.csv")
+
+data$diff = NULL
+
+data = data[, c(1, 2, 3, 4, 5, 6 ,7, 12, 8, 10, 9, 11)]
+
+data = data %>% rename(X = X1)
+
+data = rbind(data,data2)
+data = rbind(data,data3)
+
+str(data$Question)
+
+data$Question = as.factor(data$Question)
+
+
+a = filter(data, data$Question == "Correct")
+```
+
+```{r}
+data$test <- ifelse(data$Stimulus == "Neutral",2.45, 9.6)
+data$valence <- ifelse(data$Stimulus == "Painful",-8.1,data$test)
+data$test <-  NULL
+```
+
+
+```{r}
+m0 <- lmerTest::lmer(data$Perception ~ data$Objective + data$Stimulus + (1|data$ID), REML = FALSE)
+summary(m0)
+
+plot(m0)
+
+1-0.8497/(0.8497+3.7472)
+
+
+#Men and women
+data_women <- filter(data, data$Gender == "Kvinde")
+data_men <- filter(data, data$Gender == "Mand")
+
+#Mean age
+AgeW <- aggregate(Age ~ ID, FUN = mean, data=data_women)
+AgeM <- aggregate(Age ~ ID, FUN = mean, data=data_men)
+mean_age_of_woman <- round(mean(AgeW$Age),2)
+SD_of_woman <- round(sd(AgeW$Age),2)
+mean_age_of_men <- round(mean(AgeM$Age),2)
+SD_of_men <- round(sd(AgeM$Age),2)
+
+#Removing participants who where on pain killers
+data <- filter(data, data$Painkillers == "Nej")
+
+#Remove wrong answers
+data_correct <- filter(data, data$Question == "Correct")
+#Factor
+data$Stimulus <- as.factor(data$Stimulus)
+data_correct$Stimulus <- as.factor(data_correct$Stimulus)
+
+#Linear mixed effect models
+m1 <- lmerTest::lmer(data$Perception ~ data$Objective + data$Stimulus + (1|data$ID), REML = FALSE)
+
+summary(m1)
+
+m1 <- lmerTest::lmer(data$Perception ~ data$Stimulus + (1|data$ID), REML = FALSE)
+
+
+ml = aov(Perception ~ Stimulus, data = data)
+
+m0 = aov(Perception ~ Objective + Stimulus, data = data)
+
+summary(m1)
+
+litter.mcl <- glht(ml, linfct = mcp(Stimulus = 'Tukey'))
+
+litter.mc <- glht(m0, linfct = mcp(Stimulus = 'Tukey'))
+
+
+summary(litter.mc)
+summary(litter.mcl )
+
+
+
+0.4396/(sqrt(0.6198+5.7))
+
+p = 0.6198/(0.6198+5.7)
+t = 5.7/(0.6198+5.7)
+
+
+
+sd = sqrt(43)*0.25569
+
+0.56786/sd
+
+m2 <- lmerTest::lmer(data_correct$Perception ~ data_correct$Objective + data_correct$Stimulus + (1|data_correct$ID), REML = FALSE)
+
+#Standardized residuals
+data_correct$res <- resid(m2, type = "pearson") # Extract standardized residuals
+data_correct = filter(data_correct, data_correct$res < 3 & data_correct$res > -3)
+
+#data_correct$true <- ifelse(data_correct$res > 3 | data_correct$res < -3 ,"Out","In")
+#Relevel Stimulus
+data_correct$Stimulus <- relevel(data_correct$Stimulus, ref ="Comfortable")
+ggplot(data_correct, aes(data_correct$Objective,data_correct$Perception, color = data_correct$true))+geom_point()+geom_jitter()
+data_correct$Text <- as.factor(data_correct$Text)
+summary(lmerTest::lmer(data_correct$Perception ~ data_correct$Objective + data_correct$Stimulus + (1|data_correct$ID), REML = FALSE))
+m3 <- lmerTest::lmer(data_correct$Perception ~ data_correct$Objective + data_correct$Stimulus + (1|data_correct$ID), REML = FALSE)
+
+summary(m3)
+data_initial <- filter(data_correct, data_correct$Stimulus != "Neutral")
+ggplot()
+
+
+ggplot(data_correct, aes(data_correct$Objective,data_correct$Perception, color = data_correct$Stimulus))+geom_jitter()+ scale_color_manual("Prime stimulus", labels = c("Stimuli N (Neutral)","Stimuli C (Comfortable)","Stimuli P (Painful)"), values = c("blue3","Green3","Red"))+theme_minimal()+xlab("Objective (Intensity of noxious stimuli)")+ylab("Subjective (Perception of pain)")+ggtitle("                                 Further analyses")+geom_abline(slope = 0.58, intercept = 2.53466, col = "Green3",size = 0.7)+geom_abline(slope = 0.58, intercept = 3.21929, col = "Red",size = 0.7)+geom_abline(slope = 0.58, intercept = 3.06662, col = "blue3", size = 0.7)
+
+ggplot(data_initial, aes(data_initial$Objective,data_initial$Perception, color = data_initial$Stimulus))+geom_jitter()+theme_minimal()+xlab("Objective (Intensity of noxious stimuli)")+ylab("Subjective (Perception of pain)")+ggtitle("                                   Initial analyses")+scale_color_manual("Prime stimulus", labels = c("Stimuli C (Comfortable)","Stimuli P (Painful)"), values = c("Green3", "Red"))+geom_abline(slope = 0.58, intercept = 2.66, col = "Green3",size = 0.7)+geom_abline(slope = 0.58, intercept = 3.22, col = "Red",size = 0.7)
+
+str(data$va)
+plot(m3)
+25/273*100
+3.06662-0.53196
+3.06662+0.15267
+#m4 <- lm(data_correct$Perception ~ data_correct$Objective)
+#summary(m4)
+```
+
+```{r}
+psd = 1.146154
+
+
+curve(1/sqrt(2*pi*1.146154^2)*exp(-(x-8)^2/2*1.146154^2),from=-3, to=12, col = "red")
+
+par(new=TRUE)
+curve(1/sqrt(2*pi*0.87^2)*exp(-(x-5)^2/2*0.87^2),from=-3, to=12, col = "blue")
+par(new=TRUE)
+curve(1/sqrt(2*pi*1.045625^2)*exp(-(x-2.0625)^2/2*1.045625^2),from=-3, to=12, col = "green")
+```
+
+
+
+```{r}
+data_correct_low <- filter(data_correct, data_correct$Objective <= 5)
+data_correct_high <- filter(data_correct, data_correct$Objective >= 5)
+
+data_correct_low$Stimulus <- relevel(data_correct_low$Stimulus, ref ="Comfortable")
+data_correct_high$Stimulus <- relevel(data_correct_high$Stimulus, ref ="Neutral")
+
+
+summary(lmerTest::lmer(data_correct_low$Perception ~ data_correct_low$Objective + data_correct_low$Stimulus + (1|data_correct_low$ID), REML = FALSE))
+summary(lmerTest::lmer(data_correct_high$Perception ~ data_correct_high$Objective + data_correct_high$Stimulus + (1|data_correct_high$ID), REML = FALSE))
+
+ggplot(data_correct_low, aes(data_correct_low$Objective,data_correct_low$Perception, color = data_correct_low$Stimulus))+geom_point()+geom_jitter()+geom_smooth(method="lm", se=FALSE)+ scale_color_manual(values = c("blue3","Green3","Red"))
+
+```
+
+```{r}
+plot_model(m3, vline.color = "blue", show.values = TRUE, ci.lvl = NULL, rm.terms = NULL)
+```
+
+

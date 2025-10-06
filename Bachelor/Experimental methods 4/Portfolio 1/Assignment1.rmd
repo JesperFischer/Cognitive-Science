@@ -1,0 +1,327 @@
+---
+title: "Computational Modeling - Assignment 1"
+author: "Riccardo Fusaroli"
+date: "07/01/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(Metrics)
+library(rethinking)
+```
+
+## In this assignment we learn how to assess rates from a binomial distribution, using the case of assessing your teachers' knowledge of CogSci
+
+N.B. this markdown has 2 parts as it spans 2 weeks of teaching
+
+### First part
+
+You want to assess your teachers' knowledge of cognitive science. "These guys are a bunch of drama(turgist) queens, mindless philosophers, chattering communication people and Russian spies. Do they really know CogSci?", you think.
+
+To keep things simple (your teachers should not be faced with too complicated things):
+- You created a pool of equally challenging questions on CogSci
+- Each question can be answered correctly or not (we don't allow partially correct answers, to make our life simpler).
+- Knowledge of CogSci can be measured on a scale from 0 (negative knowledge, all answers wrong) through 0.5 (random chance) to 1 (awesome CogSci superpowers)
+
+This is the data:
+- Riccardo: 3 correct answers out of 6 questions
+- Kristian: 2 correct answers out of 2 questions (then he gets bored)
+- Daina: 160 correct answers out of 198 questions (Daina never gets bored)
+- Mikkel: 66 correct answers out of 132 questions
+
+Questions:
+
+1. What's Riccardo's estimated knowledge of CogSci? What is the probability he knows more than chance (0.5) [try figuring this out. if you can't peek into chapters 3.1 and 3.2 and/or the slides]?
+```{r}
+#Making a function that does grid approximation and plotting
+
+grid <- function(correct,total,density,plot_title){
+  #Define the grid
+  dens = density
+  p_grid <- seq(from = 0 , to = 1 , length.out = dens)
+  
+  #Define the prior
+  prior =  prior
+  
+  #compute likelihood at each value in grid
+  likelihood <- dbinom(correct, size = total , prob = p_grid)
+  
+  #compute product of likehood and prior
+  unstd.posterior <- likelihood * prior
+  
+  #Standardize the posterior (so it sums to 1)
+  posterior <- unstd.posterior / sum(unstd.posterior)
+  
+  posterior <<- posterior
+  #plotting it 
+  d <- data.frame(grid = p_grid, posterior = posterior, prior = prior, likelihood = likelihood)
+  ggplot(d, aes(grid,posterior)) + geom_point() + geom_line() + theme_classic() + geom_line(aes(grid, prior/dens),color= "red") + xlab("knowledge of CogSci") + ylab("Posterior and prior probability") + ggtitle(plot_title)
+}
+```
+
+ - First implement a grid aproximation (hint check paragraph 2.4.1!) with a uniform prior, calculate the posterior and plot the results
+
+```{r}
+prior <- rep(1, 100) #flat uniform prior
+#using the defined function
+grid(3,6,100,"Ricardo") 
+
+grid(2,3,20,"123")
+
+#to get the probaility Riccardo knows more than change we sum all the probabilities where the parameter is lower than 0.5. which gives us a value of 0.5
+
+#calculating the probabilty he knows more than chance (0.5)
+p_grid <- seq(from = 0 , to = 1 , length.out = 100)
+sum(posterior[p_grid<0.5])
+```
+
+
+
+- Then implement a quadratic approximation (hint check paragraph 2.4.2!).
+```{r}
+### Implement a quadratic approximation of Ricardo ###
+#R = right answer, W = wrong answer. lets just make it a function now that we are at it:
+qa = function(R, W){
+q <- quap(
+  alist(
+    R ~ dbinom(R+W,p),
+    p ~ dunif(0,1)
+  ),
+  data=list(R=R, W=W)
+)
+return(precis(q))
+}
+
+#display summary of quadratic approximation
+qa(3,3)
+
+#lets see how it looks and compared to the actual posterior distribution:
+
+#data
+R1=3
+W1=3
+
+# the real curve:
+curve(dbeta(x , R1+1 , W1+1 ) , from=0 , to=1 )
+
+# quadratic approximation (dotted curve)
+curve( dnorm( x , qa(3,3)[1,1] , qa(3,3)[1,2]) , lty=2, add = TRUE)
+
+```
+
+- N.B. for the rest of the exercise just keep using the grid approximation (we'll move to quadratic approximations in two classes)
+
+2. Estimate all the teachers' knowledge of CogSci. Who's best? Use grid approximation. Comment on the posteriors of Riccardo and Mikkel.
+2a. Produce plots of the prior, and posterior for each teacher.
+```{r}
+### Estimate all the teachers' knowledge of CogSci, via grid approximation and plot the posterior and prior ###
+prior = rep(1,20) #using the same flat prior as before.
+#plotting the different teachers posterior distributions, using 100 points in the grid approximation for visuals:
+grid(3,6,100,"Ricardo")
+grid(2,2,100,"Kristian")
+grid(160,198,100,"Daina")
+grid(66,132,100,"Mikkel")
+```
+
+3. Change the prior. Given your teachers have all CogSci jobs, you should start with a higher appreciation of their knowledge: the prior is a normal distribution with a mean of 0.8 and a standard deviation of 0.2. Do the results change (and if so how)?
+3a. Produce plots of the prior and posterior for each teacher.
+
+```{r}
+#New prior a normal distribution with 20 points evenly spaced out with a mean of 0.8 and a sd of 0.2.
+prior <- dnorm(seq(from = 0 , to = 1 , length.out = 100),0.8,0.2)
+grid(3,6,100,"Ricardo")
+grid(2,2,100,"Kristian")
+grid(160,198,100,"Daina")
+grid(66,132,100,"Mikkel")
+
+#we see that the results change quite alot for both Riccardo and Kristian, this is because of the fact that these two teachers have not completed that many question therefore the prior has alot more influence on these two teachers. We do see that the prior makes Riccardos posterior distribution "better" its shifted to the right so we would from this model predict that he is better than if we used the uniform prior. For Kristian the opposite is true, his posterior distribution is shifted a bit to the left.
+```
+
+4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
+```{r}
+#Uniform and more data
+prior <- rep(1,100)
+
+grid(300,600,100,"Ricardo / prior: uniform / more data")
+grid(200,200,100,"Kristian / prior: uniform / more data")
+grid(16000,19800,100,"Daina / prior: uniform / more data")
+grid(6600,13200,100,"Mikkel / prior: uniform / more data")
+
+#prior mean 0.8 and SD 0.2 and more data
+prior <- dnorm(seq(from = 0 , to = 1 , length.out = 100),0.8,0.2)
+
+grid(300,600,100,"Ricardo / prior: normal, mean 0.8 and SD 0.2 / more data")
+grid(200,200,100,"Kristian / prior: normal, mean 0.8 and SD 0.2 / more data")
+grid(16000,19800,100,"Daina / prior: normal, mean 0.8 and SD 0.2 / more data")
+grid(6600,13200,100,"Mikkel / prior: normal, mean 0.8 and SD 0.2 / more data")
+
+
+#With this much data the prior does not really make a difference, we see that the posterior distributions are pretty much identical, in both the uniform prior and the prior that is a normal distribution with mean 0.8 and standard deviation of 0.2.
+```
+
+
+5. Imagine you're a skeptic and think your teachers do not know anything about CogSci, given the content of their classes. How would you operationalize that belief?
+```{r}
+#Changing the prior. Lower mean. Around chance.
+
+
+#We would operationalize the belief by changing the prior. The new prior would have a lower mean and a lower standard deviation, the value of the mean would probably be around chance (0.5 = 50%) and the value of the standard deviation would reflect our confidence in our skepticism 
+```
+
+6. Optional question: Can you estimate the difference between Riccardo's estimated knowledge and that of each of the other teachers? Would you deem it credible (that is, would you believe that it is actually different)? 
+
+```{r}
+#we can do this by finding the mean (or median if one wants) of the posterior distributions and compare these values between Riccardo and the other teachers. If we do this before, collecting more data (multiplying with 100), we think that the only teachers worth comparing is Daina and Mikkel, because Kristian and Riccardo have answered so few questions it wouldn't be credible to compare them. Here we use the uniform prior.
+
+#daina
+qad = qa(160,38)
+
+#Mikkel
+qam = qa(66,66)
+
+#difference between them
+qad[1,1]-qam[1,1]
+#this means that there is around 31% difference in plausibility of them answering a question correct, where daina is "better" than Mikkel.
+
+
+#Lets do it after we  collected more data:
+qar = qa(300,300)
+
+#qak = qa(200,0)
+#seems like the quadratic approximation has some trouble, probably because p~1
+qad = qa(16000, 3800)
+qam = qa(6600,6600)
+#comparing Riccardos mean to the other teachers.
+#Riccardo compared to daina:
+qar[1,1]-qad[1,1]
+#difference of about 31%
+#Riccardo compared to Mikkel
+qar[1,1]-qam[1,1]
+#difference = 0
+#difference between Kristian and Riccardo
+qar[1,1]-1
+#difference of 50%.
+```
+
+
+### Second part: Focusing on predictions
+
+Last year you assessed the teachers (darned time runs quick!). Now you want to re-test them and assess whether your models are producing reliable predictions. In Methods 3 we learned how to do machine-learning style assessment of predictions (e.g. rmse on testing datasets). Bayesian stats makes things a bit more complicated. So we'll try out how that works. N.B. You can choose which prior to use for the analysis of last year's data.
+
+Questions to be answered (but see guidance below):
+1- Write a paragraph discussing how assessment of prediction performance is different in Bayesian vs. frequentist 
+
+
+```{r}
+#In a bayesian framework predictions are made both from the data(likelihood) and from prior knowledge (prior), in a frequentist framework predictions are solely made upon the data. This has the implications that the baysian framework has more power, assuming one uses a sensible prior. One could think that using a flat prior would give the same predictions as a frequentist approch.
+
+```
+
+2- Provide at least one plot and one written line discussing prediction errors for each of the teachers.
+```{r}
+#we'll be using the prior p ~ Normal(0.8,0.2)
+#lets start with Riccardo, and we will make this a function, because we have to do it for every teacher.
+#the new data
+ract = c(1,1,1,1,1,1,1,1,1,0)
+# old data
+rpre = c(1,1,1,0,0,0)
+ff = function(actual, previous){
+  #first we calculate the posterior after seening the previous data:
+p_grid <- seq(from = 0 , to = 1 , length.out = 20)
+  
+  #Define the prior
+  prior <- dnorm(p_grid,0.8,0.2)
+  #compute likelihood at each value in grid
+  likelihood <- dbinom(sum(previous), size = length(previous) , prob = p_grid)
+  
+  #compute product of likehood and prior
+  unstd.posterior <- likelihood * prior
+  
+  #Standardize the posterior (so it sums to 1)
+  posterior <- unstd.posterior / sum(unstd.posterior)
+  
+  posterior <- posterior
+  
+#now lets extract the number of questions he answered in the new data, from this model(the posterior):
+samples <-sample(p_grid,prob=posterior,size=length(actual),replace=TRUE)
+#lets plot how that looks
+hist(rbinom(10000, length(actual), prob = samples))
+
+
+#We can also check whether our estimates (posterior distributions (mean)) changes if we feed it the new data.
+#likelihood of new data.
+likelihood <- dbinom(sum(actual), length(actual) , prob = p_grid)
+  
+#compute product of likehood and prior, which is the new posterior
+unstd.posterior <- likelihood * posterior
+#standardizing it
+posterior1 <- unstd.posterior / sum(unstd.posterior)
+
+#plotting all 3 models (prior, old posterior and new posterior)
+d <- data.frame(grid = p_grid, posterior = posterior, prior = prior, posterior1 = posterior1)
+ggplot(d, aes(grid,posterior)) + geom_point() + geom_line() + theme_classic() + geom_line(aes(grid, prior/20),color= "red") + xlab("knowledge of CogSci") + ylab("Posterior and prior probability") + geom_line(aes(grid, posterior1), col = "green")
+}
+
+#using the function
+ff(ract,rpre)
+#looking at the plot below we see that there is quite an overlap between the green and the black posterior distributions.
+#looking at the histogram below we see that its not that unlikely that Riccardo gets 9/10 correct, using our old posterior model.
+
+```
+
+
+This is the old data:
+- Riccardo: 3 correct answers out of 6 questions
+- Kristian: 2 correct answers out of 2 questions (then he gets bored)
+- Daina: 160 correct answers out of 198 questions (Daina never gets bored)
+- Mikkel: 66 correct answers out of 132 questions
+
+This is the new data:
+- Riccardo: 9 correct answers out of 10 questions (then he freaks out about teaching preparation and leaves)
+- Kristian: 8 correct answers out of 12 questions
+- Daina: 148 correct answers out of 172 questions (again, Daina never gets bored)
+- Mikkel: 34 correct answers out of 65 questions
+
+Guidance Tips
+
+1. There are at least two ways of assessing predictions.
+2. Last year's results are this year's expectations.
+3. Are the parameter estimates changing? (way 1)
+4. How does the new data look in last year's predictive posterior? (way 2)
+
+
+
+
+
+
+```{r}
+kpre = c(1,1)
+kact = c(rep(1,8), rep(0,4))
+
+ff(kact,kpre)
+```
+
+```{r}
+dpre = c(rep(1,160),rep(0,38))
+dact = c(rep(1,148), rep(0,24))
+
+
+ff(dact,dpre)
+```
+
+```{r}
+mpre = c(rep(1,66),rep(0,66))
+mact = c(rep(1,34), rep(0,31))
+
+
+ff(mact,mpre)
+```
+
+
+
+
+
+

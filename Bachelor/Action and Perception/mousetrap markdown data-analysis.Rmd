@@ -1,0 +1,159 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+
+```{r}
+library(tidyverse)
+#install if not already done.
+#install.packages("mousetrap")
+library(mousetrap)
+```
+
+
+
+
+```{r}
+#get the data.
+s = read_csv("subject-3.csv")
+
+#make mousetrap object
+ss = mt_import_mousetrap(s)
+#plot the data
+mt_plot(ss)
+#make everything go to the same side
+ss1 = mt_remap_symmetric(ss)
+#compare with the first plot
+mt_plot(ss)
+#color by trial type
+mt_plot(ss1, color = "trial_type")
+#plot timestamps vs xposition
+mt_plot(ss1, x = "timestamps", y = "xpos", color = "trial_type")
+#exclude the initial times
+ss2 = mt_exclude_initiation(ss1)
+#now plotting again
+mt_plot(ss2, x = "timestamps", y = "xpos", color = "trial_type")
+#plotting x-position vs y-postion
+mt_plot(ss2, color = "trial_type")
+#comparing where the inital times arent removed:
+mt_plot(ss1, color = "trial_type")
+#playing with time normalization.
+ss3 = mt_time_normalize(ss2, nsteps = 1000)
+#plotting it
+mt_plot(ss3, use = "tn_trajectories", color = "trial_type")
+#trying nsteps 5
+ss4 = mt_time_normalize(ss2, nsteps = 5)
+#and plotting
+mt_plot(ss4, use = "tn_trajectories", color = "trial_type")
+#setting it back to default which is 101.
+ss3 = mt_time_normalize(ss2, nsteps = 101)
+# plotting the aggregated data both with the normalized and non-normalized time.
+mt_plot_aggregate(ss3, color = "trial_type")
+mt_plot_aggregate(ss3, use = "tn_trajectories",color = "trial_type")
+#looks best with the normalized.
+
+#getting numeric results.
+results = mt_measures(ss3, use = "tn_trajectories")
+
+#making a nice table for Maxmial distance and xpos_flips w/e that is.
+mt_aggregate(results, use_variables = c("MAD", "xpos_flips"), use2_variables = "trial_type")
+#this is cordulas results, nice.
+
+```
+
+
+
+
+
+
+
+
+```{r}
+a = read_csv("987.csv")
+
+ggplot(a, aes(MouseX, MouseY))+geom_point()
+
+a = a %>% mutate(
+  MouseX = MouseX+0.9,
+  MouseY = MouseY+0.9)
+
+
+ggplot(a, aes(MouseX, MouseY))+geom_point()
+
+a$Time1 = lag(a$Time)
+a$timedif = a$Time-aa$Time1
+
+
+a$Time1 = lag(a$Time)
+a$timedif = a$Time-a$Time1
+
+
+
+a$mousey1 = lag(a$MouseY)
+
+a$mydif = a$MouseY-a$mousey1
+
+
+a$vy = a$mydif/a$timedif
+
+
+ggplot(a, aes(Time, vy))+geom_point()+facet_wrap("Trial")
+#what a mess lets look at the first trial
+
+aa = a %>% dplyr::filter(Trial == 1)
+
+
+ggplot(aa, aes(Time, MouseY))+geom_point()
+ggplot(aa, aes(Time, vy))+geom_point()
+
+
+ggplot(aa, aes(Time, MouseY)) + 
+  geom_point(aes(y = vy, col = "red")) + 
+  geom_point(aes(y = MouseY,)) + 
+  scale_y_continuous(
+    "MouseY", 
+    sec.axis = sec_axis(~ . * 1, name = "vy")
+  )
+
+
+
+#for all?
+
+ggplot(a, aes(Time, MouseY)) + 
+  geom_point(aes(y = vy, col = "red")) + 
+  geom_point(aes(y = MouseY,)) + 
+  scale_y_continuous(
+    "MouseY", 
+    sec.axis = sec_axis(~ . * 1, name = "vy"))+facet_wrap("Trial")
+#niceee.
+
+
+```
+
+
+
+
+
+```{r}
+
+#install.packages("signal")
+library(signal)
+bf = butter(2,1/3, type = "low")
+
+aa$vyf = filtfilt(bf, aa$vy)
+
+ggplot(aa,aes(Time, vyf))+geom_point()
+ggplot(aa,aes(Time, vy))+geom_point()
+
+
+```
+
+

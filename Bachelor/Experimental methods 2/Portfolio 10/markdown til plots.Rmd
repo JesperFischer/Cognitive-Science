@@ -1,0 +1,240 @@
+
+
+
+
+
+
+
+
+
+```{r}
+#
+
+F1 = fa(r = a, nfactors = 4, rotate = "oblimin", fm = "minres")
+F2 = fa(r = a, nfactors = 5, rotate = "oblimin", fm = "minres")
+load11$question_number = seq(73)
+load11 = as.data.frame(F2$loadings[,1:5])
+
+d_MR111 = load11 %>% select(c(1,6))
+d_MR211 = load11 %>% select(c(3,6))
+d_MR511 = load11 %>% select(c(4,6))
+d_MR411 = load11 %>% select(c(2,6))
+d_MR311 = load11 %>% select(c(5,6))
+
+F1 = fa(r = a, nfactors = 4, rotate = "oblimin", fm = "minres")
+
+
+load = as.data.frame(F1$loadings[,1:4])
+load$question_number = seq(73)
+
+load$col = d_MR1$question_number
+
+load$col = ifelse(load$question_number < 74, "PEST", load$col)
+load$col = ifelse(load$question_number < 59, "Distress", load$col)
+load$col = ifelse(load$question_number < 52, "Perspective Taking", load$col)
+load$col = ifelse(load$question_number < 45, "Concern", load$col)
+load$col = ifelse(load$question_number < 38, "Fantasy", load$col)
+load$col = ifelse(load$question_number < 31, "BEES", load$col)
+
+d_MR1 = load %>% select(c(1,5,6))
+d_MR2 = load %>% select(c(3,5,6))
+d_MR3 = load %>% select(c(4,5,6))
+d_MR4 = load %>% select(c(2,5,6))
+
+
+d_MR1 <- d_MR1 %>% arrange(MR1) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR1, aes(question_number, MR1, fill = d_MR1$col, colour = d_MR1$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("4 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("ggplot 4 factors with PEST MR1.png", width = 15)
+
+
+d_MR2 <- d_MR2 %>% arrange(MR2) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR2, aes(question_number, MR2, fill = d_MR2$col, colour = d_MR2$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("4 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("ggplot 4 factors with PEST MR2.png", width = 15)
+
+
+d_MR3 <- d_MR3 %>% arrange(MR3) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR3, aes(question_number, MR3, fill = d_MR3$col, colour = d_MR3$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("4 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+
+ggsave("ggplot 4 factors with PEST MR3.png", width = 15)
+
+
+d_MR4 <- d_MR4 %>% arrange(MR4) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR4, aes(question_number, MR4, fill = d_MR4$col, colour = d_MR4$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("4 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+
+ggsave("ggplot 4 factors with PEST MR4.png", width = 15)
+
+
+
+
+
+
+
+d_MR1$col = d_MR1$question_number
+d_MR2$col = d_MR2$question_number
+d_MR3$col = d_MR3$question_number
+d_MR4$col = d_MR4$question_number
+
+d_MR111$col = d_MR111$question_number
+d_MR211$col = d_MR211$question_number
+d_MR311$col = d_MR311$question_number
+d_MR411$col = d_MR411$question_number
+d_MR511$col = d_MR511$question_number
+
+
+d_MR1$col = ifelse(d_MR1$col < 74, "PEST", d_MR1$col)
+d_MR1$col = ifelse(d_MR1$question_number < 59, "Distress", d_MR1$col)
+d_MR1$col = ifelse(d_MR1$question_number < 52, "Perspective Taking", d_MR1$col)
+d_MR1$col = ifelse(d_MR1$question_number < 45, "Concern", d_MR1$col)
+d_MR1$col = ifelse(d_MR1$question_number < 38, "Fantasy", d_MR1$col)
+d_MR1$col = ifelse(d_MR1$question_number < 31, "BEES", d_MR1$col)
+
+d_MR2$col = ifelse(d_MR2$col < 74, "PEST", d_MR2$col)
+d_MR2$col = ifelse(d_MR2$question_number < 59, "Distress", d_MR2$col)
+d_MR2$col = ifelse(d_MR2$question_number < 52, "Perspective Taking", d_MR2$col)
+d_MR2$col = ifelse(d_MR2$question_number < 45, "Concern", d_MR2$col)
+d_MR2$col = ifelse(d_MR2$question_number < 38, "Fantasy", d_MR2$col)
+d_MR2$col = ifelse(d_MR2$question_number < 31, "BEES", d_MR2$col)
+
+d_MR3$col = ifelse(d_MR3$col < 74, "PEST", d_MR3$col)
+d_MR3$col = ifelse(d_MR3$question_number < 59, "Distress", d_MR3$col)
+d_MR3$col = ifelse(d_MR3$question_number < 52, "Perspective Taking", d_MR3$col)
+d_MR3$col = ifelse(d_MR3$question_number < 45, "Concern", d_MR3$col)
+d_MR3$col = ifelse(d_MR3$question_number < 38, "Fantasy", d_MR3$col)
+d_MR3$col = ifelse(d_MR3$question_number < 31, "BEES", d_MR3$col)
+
+d_MR4$col = ifelse(d_MR4$col < 74, "PEST", d_MR4$col)
+d_MR4$col = ifelse(d_MR4$question_number < 59, "Distress", d_MR4$col)
+d_MR4$col = ifelse(d_MR4$question_number < 52, "Perspective Taking", d_MR4$col)
+d_MR4$col = ifelse(d_MR4$question_number < 45, "Concern", d_MR4$col)
+d_MR4$col = ifelse(d_MR4$question_number < 38, "Fantasy", d_MR4$col)
+d_MR4$col = ifelse(d_MR4$question_number < 31, "BEES", d_MR4$col)
+
+
+d_MR111$col = ifelse(d_MR111$col < 74, "PEST", d_MR111$col)
+d_MR111$col = ifelse(d_MR111$question_number < 59, "Distress", d_MR111$col)
+d_MR111$col = ifelse(d_MR111$question_number < 52, "Perspective Taking", d_MR111$col)
+d_MR111$col = ifelse(d_MR111$question_number < 45, "Concern", d_MR111$col)
+d_MR111$col = ifelse(d_MR111$question_number < 38, "Fantasy", d_MR111$col)
+d_MR111$col = ifelse(d_MR111$question_number < 31, "BEES", d_MR111$col)
+
+d_MR211$col = ifelse(d_MR211$col < 74, "PEST", d_MR211$col)
+d_MR211$col = ifelse(d_MR211$question_number < 59, "Distress", d_MR211$col)
+d_MR211$col = ifelse(d_MR211$question_number < 52, "Perspective Taking", d_MR211$col)
+d_MR211$col = ifelse(d_MR211$question_number < 45, "Concern", d_MR211$col)
+d_MR211$col = ifelse(d_MR211$question_number < 38, "Fantasy", d_MR211$col)
+d_MR211$col = ifelse(d_MR211$question_number < 31, "BEES", d_MR211$col)
+
+d_MR311$col = ifelse(d_MR311$col < 74, "PEST", d_MR311$col)
+d_MR311$col = ifelse(d_MR311$question_number < 59, "Distress", d_MR311$col)
+d_MR311$col = ifelse(d_MR311$question_number < 52, "Perspective Taking", d_MR311$col)
+d_MR311$col = ifelse(d_MR311$question_number < 45, "Concern", d_MR311$col)
+d_MR311$col = ifelse(d_MR311$question_number < 38, "Fantasy", d_MR311$col)
+d_MR311$col = ifelse(d_MR311$question_number < 31, "BEES", d_MR311$col)
+
+d_MR411$col = ifelse(d_MR411$col < 74, "PEST", d_MR411$col)
+d_MR411$col = ifelse(d_MR411$question_number < 59, "Distress", d_MR411$col)
+d_MR411$col = ifelse(d_MR411$question_number < 52, "Perspective Taking", d_MR411$col)
+d_MR411$col = ifelse(d_MR411$question_number < 45, "Concern", d_MR411$col)
+d_MR411$col = ifelse(d_MR411$question_number < 38, "Fantasy", d_MR411$col)
+d_MR411$col = ifelse(d_MR411$question_number < 31, "BEES", d_MR411$col)
+
+d_MR511$col = ifelse(d_MR511$col < 74, "PEST", d_MR511$col)
+d_MR511$col = ifelse(d_MR511$question_number < 59, "Distress", d_MR511$col)
+d_MR511$col = ifelse(d_MR511$question_number < 52, "Perspective Taking", d_MR511$col)
+d_MR511$col = ifelse(d_MR511$question_number < 45, "Concern", d_MR511$col)
+d_MR511$col = ifelse(d_MR511$question_number < 38, "Fantasy", d_MR511$col)
+d_MR511$col = ifelse(d_MR511$question_number < 31, "BEES", d_MR511$col)
+
+
+
+
+
+d_MR111 <- d_MR111 %>% arrange(MR1) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR111, aes(question_number, MR1, fill = d_MR111$col, colour = d_MR111$col)) + 
+  geom_col(width = 0.6) + ylim(-2,2)+ggtitle("5 factors with PEST")+xlab("Question number")+theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("ggplot 5 factors with PEST MR1.png", width = 15)
+
+
+d_MR211 <- d_MR211 %>% arrange(MR2) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR211, aes(question_number, MR2, fill = d_MR211$col, colour = d_MR211$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("5 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("ggplot 5 factors with PEST MR2.png", width = 15)
+
+
+d_MR311 <- d_MR311 %>% arrange(MR3) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR311, aes(question_number, MR3, fill = d_MR311$col, colour = d_MR311$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("5 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("ggplot 5 factors with PEST MR3.png", width = 15)
+
+
+d_MR411 <- d_MR411 %>% arrange(MR4) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR411, aes(question_number, MR4, fill = d_MR411$col, colour = d_MR411$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("5 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("ggplot 5 factors with PEST MR4.png", width = 15)
+
+
+d_MR511 <- d_MR511 %>% arrange(MR5) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR511, aes(question_number, MR5, fill = d_MR511$col, colour = d_MR511$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("5 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("ggplot 5 factors with PEST MR5.png", width = 15)
+
+
+d_MR1 <- d_MR1 %>% arrange(MR1) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR1, aes(question_number, MR1, fill = d_MR1$col, colour = d_MR1$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("4 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("ggplot 4 factors with PEST MR1.png", width = 15)
+
+
+d_MR2 <- d_MR2 %>% arrange(MR2) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR2, aes(question_number, MR2, fill = d_MR2$col, colour = d_MR2$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("4 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("ggplot 4 factors with PEST MR2.png", width = 15)
+
+
+d_MR3 <- d_MR3 %>% arrange(MR3) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR3, aes(question_number, MR3, fill = d_MR3$col, colour = d_MR3$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("4 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+
+ggsave("ggplot 4 factors with PEST MR3.png", width = 15)
+
+
+d_MR4 <- d_MR4 %>% arrange(MR4) %>% mutate(question_number = factor(question_number, levels = question_number))
+ggplot(d_MR4, aes(question_number, MR4, fill = d_MR4$col, colour = d_MR4$col)) + 
+  geom_col(width = 0.5) + ylim(-2,2)+ggtitle("4 factors with PEST")+xlab("Question number")+
+  rotate_x_text()+theme(plot.title = element_text(hjust = 0.5))
+
+
+ggsave("ggplot 4 factors with PEST MR4.png", width = 15)
+
+
+
+
+```
+

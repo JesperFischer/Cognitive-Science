@@ -1,0 +1,566 @@
+---
+title: "Assignment 3 - Applying meta-analytic priors"
+author: "Riccardo Fusaroli"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(brms)
+library(tidyverse)
+library(rethinking)
+library(metafor)
+library(bayesplot)
+
+```
+
+## Assignment 3
+
+In this assignment we do the following:
+- we run a Bayesian meta-analysis of pitch variability in ASD, based on previously published literature
+- we analyze pitch variability in ASD in two new studies using both a conservative and a meta-analytic prior
+- we assess the difference in model quality and estimates using the two priors. 
+
+The questions you need to answer are: What are the consequences of using a meta-analytic prior? Evaluate the models with conservative and meta-analytic priors. Discuss the effects on estimates. Discuss the effects on model quality. Discuss the role that meta-analytic priors should have in scientific practice. Should we systematically use them? Do they have drawbacks? Should we use them to complement more conservative approaches? How does the use of meta-analytic priors you suggest reflect the skeptical and cumulative nature of science?
+
+### Step by step suggestions
+
+Step 1: Perform a meta-analysis of pitch variability from previous studies of voice in ASD
+- N.B. all you need is in the two intro videos
+- the data is available as Ass3_MetaAnalysisData.tsv
+- You should calculate Effect size (cohen's d) and Standard Error (uncertainty in the Cohen's d) per each study, using escalc() from the metafor package (also check the livecoding intro)
+- N.B. for the purpose of the assignment we're only interested in getting a meta-analytic effect size for the meta-analytic prior (and not e.g. all the stuff on publication bias). See a brms tutorial here: https://vuorre.netlify.com/post/2016/09/29/meta-analysis-is-a-special-case-of-bayesian-multilevel-modeling/ The formula is EffectSize | se(StandardError) ~ 1 + (1 | Paper). Don't forget prior definition, model checking, etc.
+- N.B. the livecoding video is not perfect, you *can* (but don't have to) improve it: use a t-student likelihood, test the effects of the priors and refine them, check the robustness of results to more or less skeptical priors, etc. 
+- Write down the results of the meta-analysis in terms of a prior for step 2.
+
+
+```{r}
+
+m = read.delim("Ass3_MetaAnalysisData.tsv")
+m = m[-c(42, 43, 44, 45, 46, 47),]
+
+
+
+m = escalc(measure = 'SMD',
+               n1i=TD_N,
+               n2i=ASD_N,
+               m1i=PitchVariabilityTD_Mean,
+               m2i=PitchVariabilityASD_Mean,
+               sd1i=PitchVariabilityTD_SD,
+               sd2i=PitchVariabilityASD_SD,
+               data = m)
+
+
+
+
+m = m %>% mutate(
+  sd = sqrt(vi)) %>% rename(
+  SMD = yi,
+  variance = vi
+)
+
+fom = bf(SMD | se(sd)~ 1 +(1|Paper))
+
+get_prior(fom, data = m)
+
+prior_fom = c(
+  prior(normal(0,0.7), class = Intercept),
+  prior(normal(0.3,0.5), class = sd)
+)
+  
+#z = m %>% group_by(Paper) %>% summarize(mean = mean(SMD, na.rm =T))
+#sd(z$mean, na.rm =T)
+
+meta_prior = brm(
+  fom,
+  m,
+  family = gaussian(),
+  prior = prior_fom,
+  sample_prior = "only",
+  file = "m0_prior",
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20)
+)
+
+pp_check(meta_prior, nsamples = 100)
+
+meta_model = brm(
+  fom,
+  m,
+  family = gaussian(),
+  prior = prior_fom,
+  sample_prior = T,
+  file = "m0",
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20)
+)
+
+pp_check(meta_model, nsamples = 100)
+
+summary(meta_model)
+
+mcmc_trace(meta_model, pars = "b_Intercept")
+mcmc_rank_overlay(meta_model, pars = "b_Intercept")
+
+
+
+
+posterior <- posterior_samples(meta_model)
+
+ggplot(posterior)+
+  geom_density(aes(b_Intercept), fill="red", alpha = .3)+
+  geom_density(aes(prior_Intercept), fill = "blue", alpha = .5)+theme_classic()+xlab("Intercept - Prior/posterior")
+
+
+ggplot(posterior)+ geom_density(aes(sd_Paper__Intercept), fill="red", alpha = .3)+
+  geom_density(aes(prior_sd_Paper), fill = "blue", alpha = .5)+theme_classic()+xlab("Paper_sd - Prior/posterior")
+
+summary(meta_model)
+smd_m0 = fixef(meta_model)[[1]]
+smd_sd_m0 = fixef(meta_model)[[2]]
+m0_hetro = 0.39
+
+
+
+```
+
+
+
+Step 2: Analyse pitch variability in ASD in two new studies for which you have access to all the trials (not just study level estimates)
+- the data is available as Ass3_data.csv. Notice there are 2 studies (language us, and language dk), multiple trials per participant, and a few different ways to measure pitch variability (if in doubt, focus on pitch IQR, interquartile range of the log of fundamental frequency(Hz))
+- Also, let's standardize the data, so that they are compatible with our meta-analytic prior (Cohen's d is measured in SDs).
+- Is there any structure in the dataset that we should account for with random/varying effects? How would you implement that? Or, if you don't know how to do bayesian random/varying effects or don't want to bother, is there anything we would need to simplify in the dataset?
+
+
+
+```{r}
+
+p = read_csv("Ass3_data.csv")
+
+p = p %>% mutate(
+  ID = as.factor(ID),
+  Language = as.factor(Language),
+  Gender = as.factor(Gender),
+  Diagnosis = as.factor(Diagnosis)
+)
+
+
+
+dk = p %>% filter(Language == "dk")
+usa = p %>% filter(Language == "us")
+
+dk = dk %>% mutate(
+  Pitch_IQR = standardize(Pitch_IQR),
+  Pitch_SD = standardize(Pitch_SD)
+  
+)
+
+usa = usa %>% mutate(
+ Pitch_IQR = standardize(Pitch_IQR),
+  Pitch_SD = standardize(Pitch_SD)
+)
+
+
+p = rbind(usa, dk)
+
+#random varying effects. ID and language.
+
+```
+
+
+
+Step 3: Build a regression model predicting Pitch variability from Diagnosis.
+- how is the outcome distributed? (likelihood function). NB. given we are standardizing, and the meta-analysis is on that scale, gaussian is not a bad assumption, but check t-student as well. Lognormal would require us to convert the prior to that scale.
+- how are the parameters of the likelihood distribution distributed? Which predictors should they be conditioned on? Start simple, with Diagnosis only. Add other predictors only if you have the time and energy!
+- use a skeptical/conservative prior for the effects of diagnosis. Remember you'll need to motivate it, test its predictions (prior predictive checks), its impact on the posteriors (prior posterior updates checks).
+- Evaluate model quality. Describe and plot the estimates. 
+
+
+```{r}
+pitchf = bf(Pitch_IQR ~ 0+Language+Diagnosis:Language+(1|ID))
+#View(get_prior(pitchf, data=p))
+
+con_prior = c(
+  prior(normal(0,1), class = b, coef = Languageus),
+  prior(normal(0,1), class = b, coef = Languagedk),
+  prior(normal(0,1), class = b, coef = Languageus:DiagnosisTD),
+  prior(normal(0,1), class = b, coef = Languagedk:DiagnosisTD),
+  prior(normal(0.3,0.4), class = sd, group = ID),
+  prior(normal(1,0.5), class = sigma)
+)
+
+con_prior_prior = brm(
+  pitchf,
+  p,
+  family = gaussian(),
+  prior = con_prior,
+  sample_prior = "only",
+  file = "con_prior_prior",
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20)
+)
+
+pp_check(con_prior_prior, nsamples = 100)
+
+
+con_prior_model = brm(
+  pitchf,
+  p,
+  family = gaussian(),
+  prior = con_prior,
+  sample_prior = T,
+  file = "con_prior_model",
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20)
+)
+
+pp_check(con_prior_model, nsamples = 100)
+
+summary(con_prior_model)
+
+posterior = posterior_samples(con_prior_model)
+
+mcmc_trace(con_prior_model, pars = "b_Languagedk")
+mcmc_rank_overlay(con_prior_model, pars = "b_Languagedk")
+
+mcmc_trace(con_prior_model, pars = "b_Languageus")
+mcmc_rank_overlay(con_prior_model, pars = "b_Languageus")
+
+mcmc_trace(con_prior_model, pars = "b_Languagedk:DiagnosisTD")
+mcmc_rank_overlay(con_prior_model, pars = "b_Languagedk:DiagnosisTD")
+
+mcmc_trace(con_prior_model, pars = "b_Languageus:DiagnosisTD")
+mcmc_rank_overlay(con_prior_model, pars = "b_Languageus:DiagnosisTD")
+
+
+ggplot(posterior)+
+  geom_density(aes(b_Languagedk), fill="red", alpha = .3)+
+  geom_density(aes(prior_b_Languagedk), fill = "blue", alpha = .5)+theme_classic()+xlab("b_languageDK - Prior/posterior")
+
+ggplot(posterior)+ geom_density(aes(b_Languageus), fill="red", alpha = .3)+
+  geom_density(aes(prior_b_Languageus), fill = "blue", alpha = .5)+theme_classic()+xlab("b_languageUS - Prior/posterior")
+
+ggplot(posterior)+ geom_density(aes(`b_Languagedk:DiagnosisTD`), fill="red", alpha = .3)+
+  geom_density(aes(`prior_b_Languagedk:DiagnosisTD`), fill = "blue", alpha = .5)+theme_classic()+xlab("b_languageDK:DiagosisTD - Prior/posterior")
+
+ggplot(posterior)+ geom_density(aes(`b_Languageus:DiagnosisTD`), fill="red", alpha = .3)+
+  geom_density(aes(`prior_b_Languageus:DiagnosisTD`), fill = "blue", alpha = .5)+theme_classic()+xlab("b_languageUS:diagnosis:TD - Prior/posterior")
+
+
+ggplot(posterior)+ geom_density(aes(sigma), fill="red", alpha = .3)+
+  geom_density(aes(prior_sigma), fill = "blue", alpha = .5)+theme_classic()+xlab("Sigma - Prior/posterior")
+
+
+ggplot(posterior)+ geom_density(aes(sd_ID__Intercept), fill="red", alpha = .3)+
+  geom_density(aes(prior_sd_ID), fill = "blue", alpha = .5)+theme_classic()+xlab("SD_on_ID - Prior/posterior")
+```
+
+
+```{r}
+#students t-distribution :))))
+
+pitchfstudent = bf(Pitch_IQR ~ 0+Language+Diagnosis:Language+(1|ID))
+
+#View(get_prior(pitchfstudent, data=p, familiy = student()))
+
+
+con_prior_student = c(
+  prior(normal(0,1), class = b, coef = Languageus),
+  prior(normal(0,1), class = b, coef = Languagedk),
+  prior(normal(0,1), class = b, coef = Languageus:DiagnosisTD),
+  prior(normal(0,1), class = b, coef = Languagedk:DiagnosisTD),
+  prior(normal(0.3,0.4), class = sd, group = ID),
+  prior(gamma(2,0.1), class = nu),
+  prior(normal(1,0.5), class = sigma)
+)
+
+con_prior_prior_student = brm(
+  pitchfstudent,
+  p,
+  family = student(),
+  prior = con_prior_student,
+  sample_prior = "only",
+  file = "con_prior_prior_student",
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20)
+)
+
+pp_check(con_prior_prior_student, nsamples = 100)
+
+
+con_prior_model_student = brm(
+  pitchfstudent,
+  p,
+  family = student(),
+  prior = con_prior_student,
+  sample_prior = T,
+  file = "con_prior_model_student",
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20)
+)
+
+pp_check(con_prior_model_student, nsamples = 100)
+
+
+summary(con_prior_model_student)
+
+posterior = posterior_samples(con_prior_model_student)
+
+mcmc_trace(con_prior_model_student, pars = "b_Languagedk")
+mcmc_rank_overlay(con_prior_model_student, pars = "b_Languagedk")
+
+mcmc_trace(con_prior_model_student, pars = "b_Languageus")
+mcmc_rank_overlay(con_prior_model_student, pars = "b_Languageus")
+
+mcmc_trace(con_prior_model_student, pars = "b_Languagedk:DiagnosisTD")
+mcmc_rank_overlay(con_prior_model_student, pars = "b_Languagedk:DiagnosisTD")
+
+mcmc_trace(con_prior_model_student, pars = "b_Languageus:DiagnosisTD")
+mcmc_rank_overlay(con_prior_model_student, pars = "b_Languageus:DiagnosisTD")
+
+
+ggplot(posterior)+
+  geom_density(aes(b_Languagedk), fill="red", alpha = .3)+
+  geom_density(aes(prior_b_Languagedk), fill = "blue", alpha = .5)+theme_classic()+xlab("b_languageDK - Prior/posterior")
+
+ggplot(posterior)+ geom_density(aes(b_Languageus), fill="red", alpha = .3)+
+  geom_density(aes(prior_b_Languageus), fill = "blue", alpha = .5)+theme_classic()+xlab("b_languageUS - Prior/posterior")
+
+ggplot(posterior)+ geom_density(aes(`b_Languagedk:DiagnosisTD`), fill="red", alpha = .3)+
+  geom_density(aes(`prior_b_Languagedk:DiagnosisTD`), fill = "blue", alpha = .5)+theme_classic()+xlab("b_languageDK:DiagosisTD - Prior/posterior")
+
+ggplot(posterior)+ geom_density(aes(`b_Languageus:DiagnosisTD`), fill="red", alpha = .3)+
+  geom_density(aes(`prior_b_Languageus:DiagnosisTD`), fill = "blue", alpha = .5)+theme_classic()+xlab("b_languageUS:diagnosis:TD - Prior/posterior")
+
+
+ggplot(posterior)+ geom_density(aes(sigma), fill="red", alpha = .3)+
+  geom_density(aes(prior_sigma), fill = "blue", alpha = .5)+theme_classic()+xlab("Sigma - Prior/posterior")
+
+
+ggplot(posterior)+ geom_density(aes(sd_ID__Intercept), fill="red", alpha = .3)+
+  geom_density(aes(prior_sd_ID), fill = "blue", alpha = .5)+theme_classic()+xlab("SD_on_ID - Prior/posterior")
+
+```
+
+
+Step 4: Now re-run the model with the meta-analytic prior
+- Evaluate model quality. Describe and plot the estimates. 
+- N.B. you need to assess the meta-analytic informed prior (prior pred checks, prior-posterior update checks) and if relevant you can always change it in motivated ways (e.g. too confident, doesn't let the model actually learn from the data, so increase sd)
+
+
+```{r}
+
+pitchf = bf(Pitch_IQR ~ 0+Language+Language:Diagnosis+(1|ID))
+
+View(get_prior(pitchf, data=p, family = student()))
+
+priorpitchm0 = c(
+  prior(normal(0,1), class = b, coef = Languagedk),
+  prior(normal(0,1), class = b, coef = Languageus),
+  prior(normal(-0.45,0.11), class = b, coef = Languagedk:DiagnosisTD),
+  prior(normal(-0.45,0.11), class = b, coef = Languageus:DiagnosisTD),
+  prior(normal(0.5,0.5), class = sd, group = ID),
+  prior(normal(0.32,0.2), class = sigma),
+  prior(gamma(2,0.5), class = nu))
+
+
+
+con_prior_meta = brm(
+  pitchf,
+  p,
+  family = student(),
+  prior = priorpitchm0,
+  sample_prior = "only",
+  file = "con_prior_meta",
+    control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20)
+)
+
+
+pp_check(con_prior_meta, nsamples = 100)
+
+
+con_meta = brm(
+  pitchf,
+  p,
+  family = student(),
+  prior = priorpitchm0,
+  sample_prior = T,
+  file = "con_meta",
+  control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20)
+  )
+
+pp_check(con_meta, nsamples = 100)
+
+summary(con_meta)
+
+posterior1 <- posterior_samples(con_meta)
+
+
+ggplot(posterior1)+
+  geom_density(aes(posterior1$b_Languagedk), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_b_Languagedk), fill = "blue", alpha = .5)+theme_classic()+xlab("b_Languagedk - Prior/posterior")
+
+
+ggplot(posterior1)+ geom_density(aes(posterior1$b_Languageus), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_b_Languageus), fill = "blue", alpha = .5)+theme_classic()+xlab("b_Languageus - Prior/posterior")
+
+ggplot(posterior1)+ geom_density(aes(posterior1$`b_Languagedk:DiagnosisTD`), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$`prior_b_Languagedk:DiagnosisTD`), fill = "blue", alpha = .5)+theme_classic()+xlab("b_Languagedk:DiagnosisTD - Prior/posterior")
+
+ggplot(posterior1)+ geom_density(aes(posterior1$`b_Languageus:DiagnosisTD`), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$`prior_b_Languageus:DiagnosisTD`), fill = "blue", alpha = .5)+theme_classic()+xlab("b_Languageus:DiagnosisTD - Prior/posterior")
+
+
+ggplot(posterior1)+ geom_density(aes(posterior1$nu), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_nu), fill = "blue", alpha = .5)+theme_classic()+xlab("nu - Prior/posterior")
+
+ggplot(posterior1)+ geom_density(aes(posterior1$sigma), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_sigma), fill = "blue", alpha = .5)+theme_classic()+xlab("B - Prior/posterior")
+
+ggplot(posterior1)+ geom_density(aes(posterior1$sd_ID__Intercept), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_sd_ID), fill = "blue", alpha = .5)+theme_classic()+xlab("B - Prior/posterior")
+
+
+
+```
+
+
+
+
+```{r}
+
+pitchf = bf(Pitch_IQR ~ 0+Language+Language:Diagnosis+(1|ID))
+
+#View(get_prior(pitchf, data=p, family = student()))
+
+priorpitchm0 = c(
+  prior(normal(0,1), class = b, coef = Languagedk),
+  prior(normal(0,1), class = b, coef = Languageus),
+  prior(normal(-0.22,0.22), class = b, coef = Languagedk:DiagnosisTD),
+  prior(normal(-0.22,0.22), class = b, coef = Languageus:DiagnosisTD),
+  prior(normal(0.5,0.5), class = sd, group = ID),
+  prior(normal(0.32,0.2), class = sigma),
+  prior(gamma(2,0.5), class = nu))
+
+
+
+con_prior_meta2 = brm(
+  pitchf,
+  p,
+  family = student(),
+  prior = priorpitchm0,
+  sample_prior = "only",
+  file = "con_prior_meta2"
+)
+
+
+pp_check(con_prior_meta2, nsamples = 100)
+
+
+con_meta2 = brm(
+  pitchf,
+  p,
+  family = student(),
+  prior = priorpitchm0,
+  sample_prior = T,
+  file = "con_meta2",
+  control=list(
+    adapt_delta = 0.99,
+    max_treedepth = 20)
+  )
+
+pp_check(con_meta2, nsamples = 100)
+
+summary(con_meta2)
+
+posterior1 <- posterior_samples(con_meta2)
+
+
+ggplot(posterior1)+
+  geom_density(aes(posterior1$b_Languagedk), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_b_Languagedk), fill = "blue", alpha = .5)+theme_classic()+xlab("b_Languagedk - Prior/posterior")
+
+
+ggplot(posterior1)+ geom_density(aes(posterior1$b_Languageus), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_b_Languageus), fill = "blue", alpha = .5)+theme_classic()+xlab("b_Languageus - Prior/posterior")
+
+ggplot(posterior1)+ geom_density(aes(posterior1$`b_Languagedk:DiagnosisTD`), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$`prior_b_Languagedk:DiagnosisTD`), fill = "blue", alpha = .5)+theme_classic()+xlab("b_Languagedk:DiagnosisTD - Prior/posterior")
+
+ggplot(posterior1)+ geom_density(aes(posterior1$`b_Languageus:DiagnosisTD`), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$`prior_b_Languageus:DiagnosisTD`), fill = "blue", alpha = .5)+theme_classic()+xlab("b_Languageus:DiagnosisTD - Prior/posterior")
+
+
+ggplot(posterior1)+ geom_density(aes(posterior1$nu), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_nu), fill = "blue", alpha = .5)+theme_classic()+xlab("nu - Prior/posterior")
+
+ggplot(posterior1)+ geom_density(aes(posterior1$sigma), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_sigma), fill = "blue", alpha = .5)+theme_classic()+xlab("B - Prior/posterior")
+
+ggplot(posterior1)+ geom_density(aes(posterior1$sd_ID__Intercept), fill="red", alpha = .3)+
+  geom_density(aes(posterior1$prior_sd_ID), fill = "blue", alpha = .5)+theme_classic()+xlab("B - Prior/posterior")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Step 5: Compare the models
+- Plot priors and posteriors of the diagnosis effect in both models
+- Compare posteriors between the two models
+- Compare the two models (LOO)
+- Discuss how they compare and whether any of them is best.
+
+
+
+```{r}
+
+con_meta2 = add_criterion(con_meta2, criterion = "loo", reloo = T)
+con_meta = add_criterion(con_meta, criterion = "loo", reloo = T)
+con_prior_model_student = add_criterion(con_prior_model_student, criterion = "loo", reloo = T)
+
+
+
+loo_model_weights(con_meta, con_meta2, con_prior_model_student)
+
+loo_compare(con_meta, con_meta2, con_prior_model_student)
+
+
+```
+
+
+
+
+Step 6: Prepare a nice write up of the analysis and answer the questions at the top.
+
+Optional step 7: how skeptical should a prior be?
+- Try different levels of skepticism and compare them both plotting the impact on the inferred effect size and using LOO.
+
+Optional step 8: Include other predictors
+- Do age, gender and education improve the model?
+- Should they be main effects or interactions?
+
+Optional step 9: generalized linear models
+- If you wanted to preserve the lognormal distribution of the pitch variability, what would 

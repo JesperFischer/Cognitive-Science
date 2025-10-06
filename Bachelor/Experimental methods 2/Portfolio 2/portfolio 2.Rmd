@@ -1,0 +1,185 @@
+---
+title: "Portfolio 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#loading packages
+library(tidyverse)
+library(jpeg)
+
+```
+
+1a)
+```{r}
+sleep = read.csv("sleepstudy.csv")
+
+
+P372 = filter(sleep, Subject == 372)
+
+Reaction372 = P372$Reaction
+
+Days372 = P372$Days
+
+#1a
+Constant = rep(1,10)
+
+#1b
+#dot product
+#Days372%*%Constant
+sum(Days372*Constant)
+```
+#1C
+Since the dot product is above 0 the two variables are positivly correlated.
+
+### 1d
+
+```{r}
+#making the X matrix
+X = matrix(c(Constant, Days372),ncol=2)
+
+#making the linear regression manually
+beta = solve( t(X)%*%X ) %*% t(X)%*%Reaction372
+
+beta
+```
+
+### 1e
+
+```{r}
+#checking with the lm function.
+summary(lm(Reaction372 ~0+X))
+```
+As can be seen they are identical.
+
+
+### 1f
+
+```{r}
+#finding the mean of reaction time for participant 372
+mean372 = mean(Days372)
+newdays = Days372-mean372
+
+X[,2] = newdays
+X
+#making the linear regression manually
+beta1 = solve( t(X)%*%X ) %*% t(X)%*%Reaction372
+
+#checking with the lm function.
+summary(lm(Reaction372 ~0+X))
+
+mean(Reaction372)
+```
+The intercept changed but the slope did not. The slope did not change because the difference between the predictor values did not change because they were subtracted from a constant value. The intercept changed to the mean of the reaction time.
+
+
+```{r}
+data = as.data.frame(newdays)
+
+data$reaction = Reaction372
+
+ggplot(data, aes(newdays, reaction))+geom_point()+geom_smooth(method = "lm", alpha = 0)+labs(x = "days", y = "Reaction time in mS")
+```
+
+
+
+
+## 2
+
+### 2a
+```{r}
+matrix = readJPEG('portfolio_assignment2_matrices_data.jpg', native = FALSE)
+
+ncol(matrix)
+nrow(matrix)
+min(matrix)
+max(matrix)
+mean(matrix)
+```
+
+### 2b
+```{r}
+image(matrix, col=grey(1:100/100))
+#rotating it 90 degrees
+rotate <- function(x) t(apply(x, 2, rev))
+matrix<-rotate(matrix)
+
+#convert to image
+
+im = image(matrix, col=gray(1:100/100))
+```
+
+
+### 2c
+
+```{r}
+im = image(matrix2, col=gray(0))
+
+matrix2 = matrix
+```
+
+### 2d
+```{r}
+#hat
+matrix2[225:425,800:810] <- 1
+#rectangle
+matrix2[275:375,800:875] <- 1
+# drawing the image
+image(matrix2, col = gray(1:100/100))
+```
+
+### 2e
+```{r}
+whitehat = ifelse(matrix2 == 1,1,0)
+
+image(matrix*whitehat, col=grey(1:100/100))
+
+```
+
+## 3
+
+### 3a
+
+```{r}
+brain<-readJPEG('portfolio_assignment2_matrices_data2.jpg', native = FALSE)
+
+brain = rotate(brain)
+
+image(brain,col = grey(1:100/100))
+
+mean(brain)
+
+mask1 = ifelse(brain > mean(brain),1,0)
+
+mask2 = ifelse(brain < 2.5*mean(brain),1,0)
+
+mask3 = mask1*mask2
+
+image(mask3*brain, col = grey(1:100/100))
+
+sum(mask3)
+
+```
+there are 50004 pixels left with color
+
+
+## 4a.
+
+```{r}
+q = matrix(c(3,1,1,2),ncol = 2)
+v  = c(116,92)
+solve(q)%*%v
+
+28*3+32
+
+28+2*32
+2*116-92
+-116+3*92
+140/5
+160/5
+```
+

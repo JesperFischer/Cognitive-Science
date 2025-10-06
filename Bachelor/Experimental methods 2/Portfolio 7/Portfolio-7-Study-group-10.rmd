@@ -1,0 +1,344 @@
+---
+title: "Portfolio 7, Study Group 10"
+author: "Jesper Fischer, Kristian Severin, Lasse Hansen, Lærke Brædder & Sarah Hvid"
+date: "3/25/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+pacman::p_load(ggplot2, tidyverse, pastecs, lme4, nlme, WRS, reshape, ggpubr)
+
+```
+
+#### Loading the data
+
+```{r}
+face_exp_2016 <- read.csv("face_exp_data_all_160310.csv", sep=";")
+face_exp_2017 <- read.csv("face_exp_all_logs_2017.csv", sep=";")
+face_exp <- rbind(face_exp_2016,face_exp_2017)
+```
+
+Making the emotional stimuli, the colour stimuli and the frequency as factors.
+
+```{r}
+face_exp$cond_emo <- as.factor(face_exp$cond_emo)
+face_exp$cond_blue <- as.factor(face_exp$cond_blue)
+face_exp$freq <- as.factor(face_exp$freq)
+```
+
+Naming the variables and responses something you can interpret:
+
+```{r}
+face_exp$emotion <- ifelse(face_exp$cond_emo == 0, "Neutral", 
+                    ifelse(face_exp$cond_emo == 1, "Fearful", face_exp$cond_emo))
+face_exp$colour <- ifelse(face_exp$cond_blue == 1, "blue",
+                   ifelse(face_exp$cond_blue == 0, "yellow", face_exp$cond_blue))
+face_exp$freq <- ifelse(face_exp$freq == "b", "freq_blue",
+                 ifelse(face_exp$freq == "y", "freq_yellow", face_exp$freq))
+```
+
+Releveling the order of emotion so that neutral is the baseline:
+
+```{r}
+face_exp$emotion <- ordered(face_exp$emotion, levels = c('Neutral', 'Fearful'))
+levels(face_exp$emotion)
+```
+
+#### 1.a.Comprehension question. Please explain which factor was between-participants and which were withinparticipants and why.
+
+The within participant factor was the emotion and colour stimuli that differed between fearful and neutral faces. The between participant factor was the stimuli frequency which was either with a proportion of 64:32 or 32:64.
+
+
+#### 1.b. What was the age range of the participants?
+
+```{r}
+range(face_exp$age)
+```
+
+The participants were between 19 and 27 years of age.
+
+
+#### 2.a: make a box-plot of the data with RT on the y-axis and emotional condition on the x-axis.
+
+```{r}
+ggplot(face_exp, aes(x = emotion, y = rt)) + 
+  geom_boxplot(aes(fill = colour)) + 
+  facet_wrap(~ freq) + 
+  scale_fill_manual(values = 
+    c("Blue","Yellow","Blue","Yellow","Blue","Yellow","Blue","Yellow")) + 
+  ylab("Reaction Time") + 
+  xlab("Emotional Stimuli")
+```
+
+#### 2.b: Comprehension question. Explain why this plot shows that there is something wrong with the data:
+
+It seems that some people have reacted to the words and not the faces. And therefore some participants in the freq_blue condition has a reaction time of 0 seconds. The people in this condition might not have been given as good instructions as in the other condition.
+
+#### 2.c.: Make a subset of the data, including only correct responses.
+
+A subset is made with the function subset:
+
+```{r}
+correct_response <- subset(face_exp, correct_resp == 1)
+```
+
+#### 2.d.: Make another boxplot similar to that in 2.a. Did it solve the observed problem?
+
+```{r}
+ggplot(correct_response, aes(x = emotion, y = rt)) + 
+  geom_boxplot(aes(fill = colour)) + 
+  facet_wrap(~ freq) + 
+  scale_fill_manual(values = 
+    c("Blue","Yellow","Blue","Yellow","Blue","Yellow","Blue","Yellow")) + 
+  ylab("Reaction Time") + 
+  xlab("Emotional Stimuli")
+```
+
+Yes it seems that when subsetting only correct answers this solves the problem of some people having a very low or negative reaction time. We can see that on the scale of the y-axis.
+
+#### 2.e.: Use the by() function and stat.desc (in library(pastecs)) to get descriptive measures for the different conditions (e.g. see Field’s book chapter 5.5.3.2.). Try to investigate the three hypotheses based on the descriptive statistics - would you expect any of the statistical analyses to be significant based on the descriptive stats?
+
+```{r}
+by(correct_response$rt, 
+   list(correct_response$emotion, correct_response$colour, correct_response$freq), 
+   stat.desc, basic = F)
+```
+
+It seems that in general if yellow faces are shown more the reaction times are higher. This could be because the index finger trials (blue) will lead to short reaction times in general. Therefore it could seem as if the null hypothesis for H1 should be rejected.
+
+It does not seem as if H2 will yield significant results.
+
+It also seems that when being showed blue faces in the freq_yellow condition the response times are higher than when being shown yellow faces in that condition. The same is present the other way around. Therefore it could seem as if the null hypothesis for H3 should be rejected.
+
+#### 2.f.: Explore if the RT data is normally distributed using a qq-plot (e.g. qqnorm()).
+
+```{r}
+qplot(sample = correct_response$rt, stat = "qq") +
+  xlab("Expected values") + ylab("Observed values") + 
+  stat_qq() + 
+  stat_qq_line(colour = "red")
+```
+
+The data does indeed not seem to follow a normal distribution. If it had we would expect the data to follow the linear line in the qqplot, and therefore a diagonal line which does not seem to be the case. 
+
+#### 2.g.: log-transform the RT data.
+
+```{r}
+correct_response$logRT <- log(correct_response$rt)
+```
+
+#### 2.h.: Use a qq-plot to explore if the transformed data appear more normal than the untransformed.
+
+```{r}
+qplot(sample = correct_response$logRT, stat = "qq") +
+  xlab("Expected values") + ylab("Observed values") + 
+  stat_qq() + 
+  stat_qq_line(colour = "red")
+```
+
+The log transformed data appears to be a better representation of a normal distribution.
+
+#### 2.i.: Make a plot that explores the response times for participants, individually, using a box-plot. Does anybody stick out as unusual?
+
+We will start by making the ID'S to ID-numbers instead of their names in the sake of GDPR:
+```{r}
+correct_response$ID <- as.integer(correct_response$ID)
+correct_response$ID <- as.factor(correct_response$ID)
+```
+
+Then we can make a ggplot of the response time for the different participants:
+
+```{r}
+ggplot(correct_response, aes(ID, rt, fill = ID)) + 
+  geom_boxplot() + 
+  theme(legend.position = "None") + 
+  ylab("Reaction Time")
+```
+
+Yes it seems that some people have reaction times that might be considered outliers and therefore not eligible for a analysis. So we will filter out z-scores above 3:
+
+```{r}
+correct_response$z_score <- (correct_response$logRT - 
+                            mean(correct_response$logRT)) / sd(correct_response$logRT)
+correct_response <- subset(correct_response, correct_response$z_score < 3)
+```
+
+We will look at the boxplot again:
+
+```{r}
+ggplot(correct_response, aes(ID, rt, fill = ID)) + 
+  geom_boxplot() + 
+  theme(legend.position = "None") + 
+  ylab("Reaction Time")
+```
+
+This looks a lot easier to interpret.
+
+#### 3.a Make mixed effects model where you predict reaction time using the three factors as fixed effects, and include random intercepts for each participant (use “ID” from the log). Include 2-way and 3-way interactions as well. To do this use lme() from the “nlme” package, and use maximum-likelihood as estimation method(method = “ML”):
+
+```{r}
+model <- lme(logRT ~ colour*emotion*freq, 
+             random = ~1|ID, 
+             data = correct_response, method = "ML", 
+             na.action = na.omit) 
+```
+
+
+#### 3.b.: Report the t-statistics using summary().
+
+```{r}
+summary(model)
+```
+
+
+#### 3.c.: Report the F-statistics using anova() and type=‘sequential’, which gives you type=‘I’ analysis.
+
+```{r}
+anova(model, type = 'sequential')
+```
+
+#### 3.d.: Report the F-statistics using anova() and type=‘marginal’. Why might there be differences between results from 3.c and 3.d?
+
+```{r}
+anova(model, type = 'marginal')
+```
+
+Because when we are using type = 'sequential' the model is calculated by using type 1 sum of squares, and when using type = 'marginal' the model is calculated by using type 3 sum of squares. This takes standing point in two different types of analyses.
+
+#### 3.e.: Make a new model including a random slope from trial number (‘no’ in the log-file). Repeat 3.b. What does the inclusion of such a random slope model? Did it change the results?
+
+```{r}
+model1 <- lme(logRT ~ colour*emotion*freq, 
+              random = ~no|ID, 
+              data = correct_response, method = "ML")
+summary(model1)
+```
+
+Yes it took in the factor that the number of trial should be taken in as a random slope. This means that each trial gets its own slope. Which takes into consideration if participants got better at the task. Therefore it also changes the results.
+
+#### 3.f.: Make a model comparison of model 3.a and 3.e using anova(). Did the inclusion of a random slope significantly improve the model?
+
+```{r}
+anova(model, model1)
+```
+
+The value of AIC and BIC are lower for the model with random slopes. Besides that the log-likelihood is higher with a significant p-value which means that modelling random slopes significantly improves the model without making it too complex.
+
+#### 3.g.: Response times are correlated in time which goes against the assumption of independence. It might therefore be an idea to model this by including a so-called auto-regressive component in the model (e.g. this is default in SPM analyses of fMRI-data). In lme(), this is done by adding the following to the model specification: “cor=corAR1(,form=~1|ID)”. Make a new model comparison. Does that have an effect?
+
+```{r}
+model2 <- lme(logRT ~ colour*emotion*freq, random = ~no|ID, 
+              data = correct_response, 
+              method = "ML", 
+              na.action = na.omit, 
+              cor=corAR1(,form = ~1|ID)) 
+anova(model, model1, model2)
+
+
+```
+
+Again the values of AIC and BIC gets lower, while the log-likehood gets higher with a significant p-value. Improving the model without it getting too complex.
+
+#### 4.a.: Comprehension question. If you were to report these results, which model would you use and why?
+
+It makes good theoretical sense, to include random intercepts for participants as we would assume that different participants might have different reaction times in general. Besides that it makes sense to include random slopes as people might be getting better at the assignment between the different trials. Therefore we choose to use the model including both random intercepts and random slopes. This also seems to be the best model both in relation to the values of AIC and BIC and according to the log-likelihood in the model comparison. Therefore we choose model2:
+
+```{r}
+summary(model2)
+anova(model2, type = "marginal")
+
+```
+
+#### 4.b.: Throughout part 3 of this exercise we made several models to choose from What is the problem of this strategy? 
+
+By making several models, you might be disregarding the theoretical background and choosing your model based on the values of log-likelihood and p-values. This would give you a bigger chance of obtaining a model with a better p-value. Also when making a new model, people are usually introducing a new independent variable or random effect, this can only make the model explain more variance and therefore yield a more signifcant result. The values of AIC and BIC are good at taking this into consideration.
+
+#### 4.c. Write a few lines, briefly stating the results of the experiment in relation to the hypotheses, using the model you dicided upon in 4.a.
+
+There was a significant main effect of colour, t(2145) = 2.1, p = 0.0356, no other main effects were found to be significant.
+
+An interaction effect of the colour compared to the colour frequency was found to be significant t(2145) = -2.62, p = 0,0090. 
+
+
+When a higher significant effect is present, there is no reason to interpret the main effect of colour. To interpret the interaction effect we will make a line plot of it: 
+
+```{r}
+ggline(correct_response, 
+       x = "colour", 
+       y = "rt", 
+       col='freq', 
+       add = c("mean_se", "dodge"), 
+       palette = "jco")
+
+
+ggplot(correct_response, aes(x=colour, y=rt, fill = colour))+
+  geom_bar(stat='summary', fun.y = mean, width = 0.5)+
+  geom_errorbar(stat = 'summary', fun.data = mean_se, width = 0.2)+
+  labs(x = "ocular_dom", y = "Breath hold in seconds")+
+  ggtitle("ocular domiance vs breath hold")+theme_minimal()
+
+```
+
+Here the significant interaction effect is very clearly present. First of all it is made clear from the plot that in general if yellow faces are shown more the reaction time is higher. Which is why the main effect of colour is significant - This confirms H1. Also it is clear that when being showed blue faces in the freq_yellow condition the reaction time is higher, which is also present when the participants are being shown yellow faces in the freq_blue condition. Which explain our interaction and confirms H3.
+
+#### 5.a. Find the data on Blackboard, load it and report figure and analysis using the code below:
+
+```{r}
+trypt_long <- read.csv(file='trypt_long.csv',header=TRUE,sep=",")
+trypt_long$ID <- as.factor(trypt_long$ID)
+trypt_long$time <- as.factor(trypt_long$time)
+```
+
+```{r}
+#use ggline to make nice line plot. Install ggpubr, if you haven't got it
+ggline(trypt_long, 
+       x = "time", 
+       y = "mood",
+       col='Group', 
+       add = c("mean_se", "dodge"), 
+       palette = "jco")
+```
+
+```{r}
+library(lmerTest)
+#Relevel to make the reference group "loaded"
+trypt_long$Group <- relevel(trypt_long$Group,'control')
+#Relevel to make the reference time "7.05"
+trypt_long$time <- relevel(trypt_long$time,'7.05')
+#Make mixed effects model with Group and time as fixed effects and ID as random effect
+trypt_model <- lmerTest::lmer(mood~Group*time+(1|ID), data = trypt_long)
+#Get summary statistics
+trypt_res <- summary(trypt_model)
+summary(trypt_res)
+```
+
+
+
+```{r}
+#Apply Bonferroni correction for multiple comparisons to p-values (9 tests)
+# and round a bit (5 decimals)
+trypt_res$coefficients2 <- matrix(round(
+    c(trypt_res$coefficients,trypt_res$coefficients[,5]*9),
+digits=5),ncol=6)
+#Add names to the new results matrix
+colnames(trypt_res$coefficients2) <- c(colnames(trypt_res$coefficients),'p(bonf)')
+rownames(trypt_res$coefficients2) <- c(rownames(trypt_res$coefficients))
+#Show us what you've got
+trypt_res$coefficients2
+```
+
+```{r}
+#Use library(emmeans) to get more comprehensible 
+#pairwise interactions (uncorrected for multiple comparisons)
+library(emmeans)
+lsm = emmeans(trypt_model, ~Group*time)
+contrast(lsm, interaction = "pairwise")
+```
+
+#### 5.b. Report and discuss the findings. What do they mean? How do they relate to the hypotheses?
+
+There were significant interaction effects between the control- and loaded group to the time from 6.55 to 7.05 T(80) = 3,251, and between the control- and loaded group to the time form 7.05 to 12.00 T(80) = 2,66. From these significant interaction effects and the plot it seems that when people are eating the amino acids their mood drops significantly, which supports H2. Also in general peoples moods are significantly increases between 7.05-12 supporting H3 that people are hungry at 12.00 and this in some way affects their mood at this time of the day. There does not seem to be evidence that supports rejecting the null hypothesis for H1. 
+
+
